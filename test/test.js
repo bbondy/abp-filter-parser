@@ -35,8 +35,16 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '/banner/*/img^',
-    blocked: [],
-    notBlocked: []
+    blocked: [
+      'http://example.com/banner/foo/img',
+      'http://example.com/banner/foo/bar/img?param',
+      'http://example.com/banner//img/foo',
+    ],
+    notBlocked: [
+      'http://example.com/banner/img',
+      'http://example.com/banner/foo/imgraph',
+      'http://example.com/banner/foo/img.gif',
+    ]
   }],
   ['||ads.example.com^', {
     isRegex: false,

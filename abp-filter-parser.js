@@ -25,6 +25,8 @@ var filterOptions = new Set([
   'third-party',
 ]);
 
+const separatorCharacters = ':?/';
+
 export function parseFilter(input, parsedFilterData) {
   // Check for comment or nothing
   if (input.length === 0) {
@@ -127,6 +129,34 @@ function getDomainIndex(input) {
   return index;
 }
 
+// Similar to str1.indexOf(filter, startingPos) but with
+// extra consideration to some ABP filter rules like ^
+function indexOfFilter(input, filter, startingPos) {
+  if (filter.length > input.length) {
+    return -1;
+  }
+
+  let filterParts = filter.split('^');
+  let index = startingPos;
+  let beginIndex = -1;
+  for (let f = 0; f < filterParts.length; f++) {
+    index = input.indexOf(filterParts[f], index);
+    if (index === -1) {
+      return -1;
+    }
+    if (beginIndex === -1) {
+      beginIndex = index;
+    }
+    if (f + 1 < filterParts.length && input.length > index + filterParts[f].length) {
+      if (separatorCharacters.indexOf(input[index + filterParts[f].length]) === -1) {
+        return -1;
+      }
+
+    }
+  }
+  return beginIndex;
+}
+
 export function matchesFilter(parsedFilterData, input) {
   // Check for a regex match
   if (parsedFilterData.isRegex) {
@@ -169,7 +199,7 @@ export function matchesFilter(parsedFilterData, input) {
   let parts = parsedFilterData.data.split('*');
   let index = 0;
   for (let part of parts) {
-    let newIndex = input.indexOf(part, index);
+    let newIndex = indexOfFilter(input, part, index);
     if (newIndex === -1) {
       return false;
     }
