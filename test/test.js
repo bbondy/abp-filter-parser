@@ -118,7 +118,7 @@ let testRules = new Map([
       'http://gooddomain.example/analyze?http://baddomain.example',
     ],
   }],
-  ["||example.com/banner.gif", {
+  ['||example.com/banner.gif', {
     isRegex: false,
     isException: false,
     elementHiding: undefined,
@@ -300,7 +300,7 @@ describe('#parseFilter()', function(){
 
 describe('#parse()', function(){
   it('should parse EasyList without failing', function(cb){
-    fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
+    fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
       if (err) {
         return console.log(err);
       }

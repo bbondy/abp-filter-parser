@@ -1,3 +1,4 @@
+/*
 var filterOptions = new Set([
   // Include or exclude JavaScript files.
   'script',
@@ -24,6 +25,7 @@ var filterOptions = new Set([
   // Specify whether a filter should be active on third-party or first domains.
   'third-party',
 ]);
+*/
 
 const separatorCharacters = ':?/=^';
 
@@ -76,7 +78,7 @@ export function parseFilter(input, parsedFilterData) {
 
   // Check for a regex
   parsedFilterData.isRegex = input[beginIndex] === '/' &&
-    input[input.length -1] === '/' && beginIndex !== input.length -1;
+    input[input.length - 1] === '/' && beginIndex !== input.length - 1;
   if (parsedFilterData.isRegex) {
     parsedFilterData.data = input.slice(beginIndex + 1, -1);
     return true;
@@ -143,7 +145,10 @@ export function parse(input) {
 
 function getDomainIndex(input) {
   let index = input.indexOf(':');
-  while (input[++index] === '/');
+  ++index;
+  while (input[index] === '/') {
+    index++;
+  }
   return index;
 }
 
@@ -174,7 +179,7 @@ function indexOfFilter(input, filter, startingPos) {
     }
 
     if (prefixedSeparatorChar) {
-      if (separatorCharacters.indexOf(input[index -1]) === -1) {
+      if (separatorCharacters.indexOf(input[index - 1]) === -1) {
         return -1;
       }
     }
@@ -209,7 +214,7 @@ export function matchesFilter(parsedFilterData, input) {
 
   // Check for right anchored
   if (parsedFilterData.rightAnchored) {
-    return input.slice(- parsedFilterData.data.length) === parsedFilterData.data;
+    return input.slice(-parsedFilterData.data.length) === parsedFilterData.data;
   }
 
   // Check for left anchored
@@ -239,7 +244,7 @@ export function matchesFilter(parsedFilterData, input) {
     if (newIndex === -1) {
       return false;
     }
-    index  = newIndex + part.length;
+    index = newIndex + part.length;
   }
 
   return true;

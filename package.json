@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "mocha --compilers js:babel/register"
+    "test": "mocha --compilers js:babel/register",
+    "lint": "eslint abp-filter-parser.js test/test.js"
   },
   "author": "",
   "license": "MPL-2.0",
   "devDependencies": {
     "babel": "^5.6.6",
+    "babel-eslint": "^3.1.18",
+    "eslint": "^0.23.0",
     "mocha": "^2.2.5"
   },
   "repository": {
