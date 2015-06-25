@@ -76,8 +76,12 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'http://baddomain.example/',
-    blocked: [],
-    notBlocked: [],
+    blocked: [
+     'http://baddomain.example/banner.gif',
+    ],
+    notBlocked: [
+      'http://gooddomain.example/analyze?http://baddomain.example',
+    ],
   }],
   ["||example.com/banner.gif", {
     isRegex: false,
