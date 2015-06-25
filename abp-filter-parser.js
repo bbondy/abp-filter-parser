@@ -120,11 +120,17 @@ export function parse(input) {
 }
 
 export function matchesFilter(parsedFilterData, input) {
+  // Check for a regex match
   if (parsedFilterData.isRegex) {
     if (!parsedFilterData.regex) {
       parsedFilterData.regex = new RegExp(parsedFilterData.data);
     }
     return parsedFilterData.regex.test(input);
+  }
+
+  // Check for both left and right anchored
+  if (parsedFilterData.leftAnchored && parsedFilterData.rightAnchored) {
+    return parsedFilterData.data === input;
   }
 
   return true;

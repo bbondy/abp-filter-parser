@@ -41,8 +41,13 @@ var testRules = new Map([
     rightAnchored: true,
     options: undefined,
     data: 'http://example.com/',
-    blocked: [],
-    notBlocked: [],
+    blocked: [
+      'http://example.com/'
+    ],
+    notBlocked: [
+      'http://example.com/foo.gif',
+      'http://example.info/redirect/http://example.com/',
+    ],
   }],
   ['swf|', {
     isRegex: false,
