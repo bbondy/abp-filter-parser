@@ -76,8 +76,13 @@ export function parseFilter(input, parsedFilterData) {
   if (input[beginIndex] === '|') {
     // Check for an anchored domain name
     if (input[beginIndex + 1] === '|') {
-      parsedFilterData.domainNameAnchor = true;
+      parsedFilterData.hostAnchored = true;
+      let indexOfSlash = input.indexOf('/', beginIndex + 1);
+      if (indexOfSlash === -1) {
+        indexOfSlash = input.length;
+      }
       beginIndex += 2;
+      parsedFilterData.host = input.substring(beginIndex, indexOfSlash);
     } else {
       parsedFilterData.leftAnchored = true;
       beginIndex++;
@@ -119,6 +124,12 @@ export function parse(input) {
   return parserData;
 }
 
+function getDomainIndex(input) {
+  let index = input.indexOf(':');
+  while (input[++index] === '/');
+  return index;
+}
+
 export function matchesFilter(parsedFilterData, input) {
   // Check for a regex match
   if (parsedFilterData.isRegex) {
@@ -131,6 +142,20 @@ export function matchesFilter(parsedFilterData, input) {
   // Check for both left and right anchored
   if (parsedFilterData.leftAnchored && parsedFilterData.rightAnchored) {
     return parsedFilterData.data === input;
+  }
+
+  // Check for domain name anchored
+  if (parsedFilterData.hostAnchored) {
+    let domainIndexStart = getDomainIndex(input);
+    let domainIndexEnd = input.indexOf('/', domainIndexStart);
+    if (domainIndexEnd === -1) {
+      domainIndexEnd = input.length;
+    }
+    let inputHost = input.substring(domainIndexStart, domainIndexEnd);
+    let matchIndex = inputHost.lastIndexOf(parsedFilterData.host);
+    return (matchIndex === 0 || inputHost[matchIndex - 1] === '.') &&
+      inputHost.length <= matchIndex + parsedFilterData.host.length &&
+      input.indexOf(parsedFilterData.data) !== -1;
   }
 
   return true;
