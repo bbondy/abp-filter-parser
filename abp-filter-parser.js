@@ -25,7 +25,16 @@ var filterOptions = new Set([
   'third-party',
 ]);
 
-const separatorCharacters = ':?/=';
+const separatorCharacters = ':?/=^';
+
+function findFirstSeparatorChar(input, startPos) {
+  for (let i = startPos; i < input.length; i++) {
+    if (separatorCharacters.indexOf(input[i]) !== -1) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 export function parseFilter(input, parsedFilterData) {
   // Check for comment or nothing
@@ -79,12 +88,12 @@ export function parseFilter(input, parsedFilterData) {
     // Check for an anchored domain name
     if (input[beginIndex + 1] === '|') {
       parsedFilterData.hostAnchored = true;
-      let indexOfSlash = input.indexOf('/', beginIndex + 1);
-      if (indexOfSlash === -1) {
-        indexOfSlash = input.length;
+      let indexOfSep = findFirstSeparatorChar(input, beginIndex + 1);
+      if (indexOfSep === -1) {
+        indexOfSep = input.length;
       }
       beginIndex += 2;
-      parsedFilterData.host = input.substring(beginIndex, indexOfSlash);
+      parsedFilterData.host = input.substring(beginIndex, indexOfSep);
     } else {
       parsedFilterData.leftAnchored = true;
       beginIndex++;
@@ -202,7 +211,7 @@ export function matchesFilter(parsedFilterData, input) {
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
     let domainIndexStart = getDomainIndex(input);
-    let domainIndexEnd = input.indexOf('/', domainIndexStart);
+    let domainIndexEnd = findFirstSeparatorChar(input, domainIndexStart);
     if (domainIndexEnd === -1) {
       domainIndexEnd = input.length;
     }
@@ -210,7 +219,7 @@ export function matchesFilter(parsedFilterData, input) {
     let matchIndex = inputHost.lastIndexOf(parsedFilterData.host);
     return (matchIndex === 0 || inputHost[matchIndex - 1] === '.') &&
       inputHost.length <= matchIndex + parsedFilterData.host.length &&
-      input.indexOf(parsedFilterData.data) !== -1;
+      indexOfFilter(input, parsedFilterData.data) !== -1;
   }
 
   // Wildcard match comparison

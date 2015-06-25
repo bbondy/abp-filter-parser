@@ -56,8 +56,15 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'ads.example.com^',
-    blocked: [],
-    notBlocked: [],
+    blocked: [
+      'http://ads.example.com/foo.gif',
+      'http://server1.ads.example.com/foo.gif',
+      'https://ads.example.com:8000/',
+    ],
+    notBlocked: [
+      'http://ads.example.com.ua/foo.gif',
+      'http://example.com/redirect/http://ads.example.com/',
+    ],
   }],
   ['|http://example.com/|', {
     isRegex: false,
