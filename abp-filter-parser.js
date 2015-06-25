@@ -111,20 +111,30 @@ export function parseFilter(input, parsedFilterData) {
 export function parse(input) {
   let parserData = {
     filterCount: 0,
-    parsedFilters: [],
+    filters: [],
+    exceptionFilters: [],
   };
 
   let startPos = 0;
   let endPos = input.length;
-  while (startPos !== input.length) {
-    endPos = input.indexOf('\n', startPos);
+  let newline = '\n';
+  while (startPos <= input.length) {
+    endPos = input.indexOf(newline, startPos);
+    if (endPos === -1) {
+      newline = '\r';
+      endPos = input.indexOf(newline, startPos);
+    }
     if (endPos === -1) {
       endPos = input.length;
     }
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
     if (parseFilter(filter, parsedFilterData)) {
-      parserData.parsedFilters.push(parsedFilterData);
+      if (parsedFilterData.isException) {
+        parserData.exceptionFilters.push(parsedFilterData);
+      } else {
+        parserData.filters.push(parsedFilterData);
+      }
       parserData.filterCount++;
     }
     startPos = endPos + 1;
@@ -234,4 +244,14 @@ export function matchesFilter(parsedFilterData, input) {
   }
 
   return true;
+}
+
+export function matches(parserData, input) {
+  if (parserData.exceptionFilters.some((parsedFilterData) =>
+      matchesFilter(parsedFilterData, input))) {
+    return false;
+  }
+
+  return parserData.filters.some((parsedFilterData) =>
+    matchesFilter(parsedFilterData, input));
 }

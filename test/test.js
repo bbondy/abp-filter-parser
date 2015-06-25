@@ -1,8 +1,8 @@
 import assert from 'assert';
-import {parse, parseFilter, matchesFilter} from '../abp-filter-parser.js';
+import {parse, parseFilter, matches, matchesFilter} from '../abp-filter-parser.js';
 import fs from 'fs';
 
-var testRules = new Map([
+let testRules = new Map([
   ['/banner/*/img', {
     isRegex: false,
     isException: false,
@@ -225,8 +225,20 @@ var testRules = new Map([
   }],
 ]);
 
+let exceptionRules = new Map([
+  [`adv
+    @@advice.`, {
+    blocked: [
+      'http://example.com/advert.html',
+    ],
+    notBlocked: [
+      'http://example.com/advice.html',
+    ]
+  }],
+]);
+
 describe('#parseFilter()', function(){
-  it('should extract proper parsing info for filter rules', function(){
+  it('should extract proper parsing info for filter rules', function() {
     testRules.forEach((testRule, key) => {
       let parsedFilterData = {};
       parseFilter(key, parsedFilterData);
@@ -246,6 +258,21 @@ describe('#parseFilter()', function(){
       }
     });
   });
+
+  it('Exception tests work correctly', function() {
+    exceptionRules.forEach((testRule, key) => {
+      let parserData = parse(key);
+      for (let input of testRule.blocked) {
+        assert(matches(parserData, input),
+          `${key} should block ${input}`);
+      }
+      for (let input of testRule.notBlocked) {
+        assert(!matches(parserData, input),
+          `${key} should not block ${input}`);
+      }
+    });
+  });
+
 });
 
 describe('#parse()', function(){
