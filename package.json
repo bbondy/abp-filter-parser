@@ -1,0 +1,16 @@
+{
+  "name": "abp-filter-parser",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bbondy/abp-filter-parser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bbondy/abp-filter-parser/issues"
+  },
+  "homepage": "https://github.com/bbondy/abp-filter-parser#readme",
+  "description": ""
+}
