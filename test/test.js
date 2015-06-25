@@ -143,7 +143,10 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'http://example.com^',
-    blocked: [],
+    blocked: [
+      'http://example.com/',
+      'http://example.com:8000/ ',
+    ],
     notBlocked: [],
   }],
   ['^example.com^', {
@@ -156,7 +159,9 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '^example.com^',
-    blocked: [],
+    blocked: [
+      'http://example.com:8000/foo.bar?a=12&b=%D1%82%D0%B5%D1%81%D1%82',
+    ],
     notBlocked: [],
   }],
   ['^%D1%82%D0%B5%D1%81%D1%82^', {
@@ -169,8 +174,12 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '^%D1%82%D0%B5%D1%81%D1%82^',
-    blocked: [],
-    notBlocked: [],
+    blocked: [
+      'http://example.com:8000/foo.bar?a=12&b=%D1%82%D0%B5%D1%81%D1%82',
+    ],
+    notBlocked: [
+      'http://example.com:8000/foo.bar?a=12&b%D1%82%D0%B5%D1%81%D1%823',
+    ],
   }],
   ['^foo.bar^', {
     isRegex: false,
@@ -182,8 +191,11 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '^foo.bar^',
-    blocked: [],
-    notBlocked: [],
+    blocked: [
+      'http://example.com:8000/foo.bar?a=12&b=%D1%82%D0%B5%D1%81%D1%82'
+    ],
+    notBlocked: [
+    ],
   }],
   ['/banner\\d+/', {
     isRegex: true,

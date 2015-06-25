@@ -25,7 +25,7 @@ var filterOptions = new Set([
   'third-party',
 ]);
 
-const separatorCharacters = ':?/';
+const separatorCharacters = ':?/=';
 
 export function parseFilter(input, parsedFilterData) {
   // Check for comment or nothing
@@ -139,7 +139,14 @@ function indexOfFilter(input, filter, startingPos) {
   let filterParts = filter.split('^');
   let index = startingPos;
   let beginIndex = -1;
+  let prefixedSeparatorChar = false;
+
   for (let f = 0; f < filterParts.length; f++) {
+    if (filterParts[f] === '') {
+      prefixedSeparatorChar = true;
+      continue;
+    }
+
     index = input.indexOf(filterParts[f], index);
     if (index === -1) {
       return -1;
@@ -147,12 +154,23 @@ function indexOfFilter(input, filter, startingPos) {
     if (beginIndex === -1) {
       beginIndex = index;
     }
-    if (f + 1 < filterParts.length && input.length > index + filterParts[f].length) {
+
+    if (prefixedSeparatorChar) {
+      if (separatorCharacters.indexOf(input[index -1]) === -1) {
+        return -1;
+      }
+    }
+    // If we are in an in between filterPart
+    if (f + 1 < filterParts.length &&
+        // and we have some chars left in the input past the last filter match
+        input.length > index + filterParts[f].length) {
       if (separatorCharacters.indexOf(input[index + filterParts[f].length]) === -1) {
         return -1;
       }
 
     }
+
+    prefixedSeparatorChar = false;
   }
   return beginIndex;
 }
