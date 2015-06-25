@@ -37,6 +37,8 @@ function findFirstSeparatorChar(input, startPos) {
 }
 
 export function parseFilter(input, parsedFilterData) {
+  input = input.trim();
+
   // Check for comment or nothing
   if (input.length === 0) {
     return false;
@@ -47,9 +49,6 @@ export function parseFilter(input, parsedFilterData) {
   if (input[beginIndex] === '[' || input[beginIndex] === '!') {
     return false;
   }
-
-  // We'll likely want to store the filter rule at this point
-  input = input.trim();
 
   // Check for exception instead of filter
   parsedFilterData.isException = input[beginIndex] === '@' &&

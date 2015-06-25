@@ -235,6 +235,29 @@ let exceptionRules = new Map([
       'http://example.com/advice.html',
     ]
   }],
+  [`@@advice.
+    adv`, {
+      blocked: [
+        'http://example.com/advert.html'
+      ],
+      notBlocked: [
+        'http://example.com/advice.html'
+      ],
+  }],
+  [`@@|http://example.com
+    @@advice.
+    adv
+    !foo`, {
+     blocked: [
+       'http://examples.com/advert.html',
+     ],
+     notBlocked: [
+       'http://example.com/advice.html',
+       'http://example.com/advert.html',
+       'http://examples.com/advice.html',
+       'http://examples.com/#!foo',
+     ],
+  }],
 ]);
 
 describe('#parseFilter()', function(){
