@@ -13,6 +13,10 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '/banner/*/img*',
+    blocked: [
+    ],
+    notBlocked: [
+    ]
   }],
   ['||ads.example.com^', {
     isRegex: false,
@@ -24,6 +28,8 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'ads.example.com*',
+    blocked: [],
+    notBlocked: [],
   }],
   ['|http://example.com/|', {
     isRegex: false,
@@ -35,6 +41,8 @@ var testRules = new Map([
     rightAnchored: true,
     options: undefined,
     data: 'http://example.com/',
+    blocked: [],
+    notBlocked: [],
   }],
   ['swf|', {
     isRegex: false,
@@ -46,6 +54,8 @@ var testRules = new Map([
     rightAnchored: true,
     options: undefined,
     data: 'swf',
+    blocked: [],
+    notBlocked: [],
   }],
   ['|http://baddomain.example/', {
     isRegex: false,
@@ -57,6 +67,8 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'http://baddomain.example/',
+    blocked: [],
+    notBlocked: [],
   }],
   ["||example.com/banner.gif", {
     isRegex: false,
@@ -68,6 +80,8 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'example.com/banner.gif',
+    blocked: [],
+    notBlocked: [],
   }],
   ['http://example.com^', {
     isRegex: false,
@@ -79,6 +93,8 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: 'http://example.com*',
+    blocked: [],
+    notBlocked: [],
   }],
   ['^example.com^', {
     isRegex: false,
@@ -90,6 +106,8 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '*example.com*',
+    blocked: [],
+    notBlocked: [],
   }],
   ['^%D1%82%D0%B5%D1%81%D1%82^', {
     isRegex: false,
@@ -101,6 +119,8 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '*%D1%82%D0%B5%D1%81%D1%82*',
+    blocked: [],
+    notBlocked: [],
   }],
   ['^foo.bar^', {
     isRegex: false,
@@ -112,6 +132,27 @@ var testRules = new Map([
     rightAnchored: undefined,
     options: undefined,
     data: '*foo.bar*',
+    blocked: [],
+    notBlocked: [],
+  }],
+  ['/banner\\d+/', {
+    isRegex: true,
+    isException: false,
+    elementHiding: undefined,
+    elementHidingException: undefined,
+    domainNameAnchor: undefined,
+    leftAnchored: undefined,
+    rightAnchored: undefined,
+    options: undefined,
+    data: 'banner\\d+',
+    blocked: [
+      'banner123',
+      'testbanner1',
+    ],
+    notBlocked: [
+      'banners',
+      'banners123',
+    ],
   }],
 ]);
 
@@ -121,7 +162,19 @@ describe('#parseFilter()', function(){
       let parsedFilterData = {};
       parseFilter(key, parsedFilterData);
       for (let p in testRule) {
-        assert.equal(testRule[p], parsedFilterData[p], `for property ${p}`);
+        if (!['blocked', 'notBlocked'].includes(p)) {
+          assert.equal(testRule[p], parsedFilterData[p], `for property ${p}:
+            ${testRule[p]} !== ${parsedFilterData[p]}`);
+        }
+      }
+      for (let input of testRule.blocked) {
+        assert(matchesFilter(parsedFilterData, input),
+          `${key} should block ${input}`);
+      }
+      for (let input of testRule.notBlocked) {
+        console.log('checking input: ', input);
+        assert(!matchesFilter(parsedFilterData, input),
+          `${key} should not block ${input}`);
       }
     });
   });

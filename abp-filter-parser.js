@@ -68,7 +68,7 @@ export function parseFilter(input, parsedFilterData) {
   parsedFilterData.isRegex = input[beginIndex] === '/' &&
     input[input.length -1] === '/' && beginIndex !== input.length -1;
   if (parsedFilterData.isRegex) {
-    parsedFilterData.regex = input.substring(beginIndex + 1);
+    parsedFilterData.data = input.slice(beginIndex + 1, -1);
     return true;
   }
 
@@ -117,4 +117,15 @@ export function parse(input) {
     startPos = endPos + 1;
   }
   return parserData;
+}
+
+export function matchesFilter(parsedFilterData, input) {
+  if (parsedFilterData.isRegex) {
+    if (!parsedFilterData.regex) {
+      parsedFilterData.regex = new RegExp(parsedFilterData.data);
+    }
+    return parsedFilterData.regex.test(input);
+  }
+
+  return true;
 }
