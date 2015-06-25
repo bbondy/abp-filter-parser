@@ -2,8 +2,15 @@
   "name": "abp-filter-parser",
   "version": "1.0.0",
   "main": "index.js",
+  "scripts": {
+    "test": "mocha --compilers js:babel/register"
+  },
   "author": "",
   "license": "MPL-2.0",
+  "devDependencies": {
+    "babel": "^5.6.6",
+    "mocha": "^2.2.5"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bbondy/abp-filter-parser.git"
