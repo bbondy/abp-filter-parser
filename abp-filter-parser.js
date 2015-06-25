@@ -144,6 +144,11 @@ export function matchesFilter(parsedFilterData, input) {
     return parsedFilterData.data === input;
   }
 
+  // Check for right anchored
+  if (parsedFilterData.rightAnchored) {
+    return input.slice(- parsedFilterData.data.length) === parsedFilterData.data;
+  }
+
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
     let domainIndexStart = getDomainIndex(input);
