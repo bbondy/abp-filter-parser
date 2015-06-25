@@ -65,7 +65,8 @@ export function parseFilter(input, parsedFilterData) {
   }
 
   // Check for a regex
-  parsedFilterData.isRegex = input[beginIndex] === '/';
+  parsedFilterData.isRegex = input[beginIndex] === '/' &&
+    input[input.length -1] === '/' && beginIndex !== input.length -1;
   if (parsedFilterData.isRegex) {
     parsedFilterData.regex = input.substring(beginIndex + 1);
     return true;
@@ -76,8 +77,10 @@ export function parseFilter(input, parsedFilterData) {
     // Check for an anchored domain name
     if (input[beginIndex + 1] === '|') {
       parsedFilterData.domainNameAnchor = true;
+      beginIndex += 2;
     } else {
       parsedFilterData.leftAnchored = true;
+      beginIndex++;
     }
   }
   if (input[input.length - 1] === '|') {
@@ -115,4 +118,3 @@ export function parse(input) {
   }
   return parserData;
 }
-
