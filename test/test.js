@@ -3,6 +3,28 @@ import {parse, parseFilter, matchesFilter} from '../abp-filter-parser.js';
 import fs from 'fs';
 
 var testRules = new Map([
+  ['/banner/*/img', {
+    isRegex: false,
+    isException: false,
+    elementHiding: undefined,
+    elementHidingException: undefined,
+    hostAnchored: undefined,
+    leftAnchored: undefined,
+    rightAnchored: undefined,
+    options: undefined,
+    data: '/banner/*/img',
+    blocked: [
+      'http://example.com/banner/foo/img',
+      'http://example.com/banner/foo/bar/img?param',
+      'http://example.com/banner//img/foo',
+      'http://example.com/banner//img.gif',
+    ],
+    notBlocked: [
+      'http://example.com/banner/',
+      'http://example.com/banner/img',
+      'http://example.com/img/banner/',
+    ]
+  }],
   ['/banner/*/img^', {
     isRegex: false,
     isException: false,
@@ -12,11 +34,9 @@ var testRules = new Map([
     leftAnchored: undefined,
     rightAnchored: undefined,
     options: undefined,
-    data: '/banner/*/img*',
-    blocked: [
-    ],
-    notBlocked: [
-    ]
+    data: '/banner/*/img^',
+    blocked: [],
+    notBlocked: []
   }],
   ['||ads.example.com^', {
     isRegex: false,
@@ -27,7 +47,7 @@ var testRules = new Map([
     leftAnchored: undefined,
     rightAnchored: undefined,
     options: undefined,
-    data: 'ads.example.com*',
+    data: 'ads.example.com^',
     blocked: [],
     notBlocked: [],
   }],
@@ -114,7 +134,7 @@ var testRules = new Map([
     leftAnchored: undefined,
     rightAnchored: undefined,
     options: undefined,
-    data: 'http://example.com*',
+    data: 'http://example.com^',
     blocked: [],
     notBlocked: [],
   }],
@@ -127,7 +147,7 @@ var testRules = new Map([
     leftAnchored: undefined,
     rightAnchored: undefined,
     options: undefined,
-    data: '*example.com*',
+    data: '^example.com^',
     blocked: [],
     notBlocked: [],
   }],
@@ -140,7 +160,7 @@ var testRules = new Map([
     leftAnchored: undefined,
     rightAnchored: undefined,
     options: undefined,
-    data: '*%D1%82%D0%B5%D1%81%D1%82*',
+    data: '^%D1%82%D0%B5%D1%81%D1%82^',
     blocked: [],
     notBlocked: [],
   }],
@@ -153,7 +173,7 @@ var testRules = new Map([
     leftAnchored: undefined,
     rightAnchored: undefined,
     options: undefined,
-    data: '*foo.bar*',
+    data: '^foo.bar^',
     blocked: [],
     notBlocked: [],
   }],

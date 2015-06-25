@@ -93,9 +93,6 @@ export function parseFilter(input, parsedFilterData) {
     input = input.substring(0, input.length - 1);
   }
 
-  // Replace separators with * for easier parsing (will probably refactor later)
-  input = input.replace(/\^/g, '*');
-
   parsedFilterData.data = input.substring(beginIndex) || '*';
   return true;
 }
@@ -166,6 +163,17 @@ export function matchesFilter(parsedFilterData, input) {
     return (matchIndex === 0 || inputHost[matchIndex - 1] === '.') &&
       inputHost.length <= matchIndex + parsedFilterData.host.length &&
       input.indexOf(parsedFilterData.data) !== -1;
+  }
+
+  // Wildcard match comparison
+  let parts = parsedFilterData.data.split('*');
+  let index = 0;
+  for (let part of parts) {
+    let newIndex = input.indexOf(part, index);
+    if (newIndex === -1) {
+      return false;
+    }
+    index  = newIndex + part.length;
   }
 
   return true;
