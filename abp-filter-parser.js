@@ -255,21 +255,35 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
     if (domainOption) {
       let domains = domainOption.split('=')[1].trim().split('|');
       let shouldSkipDomainCheck = domains.some((domain) => domain[0] === '~' &&
-        !isThirdPartyHost(domain.substring(1), contextParams.domain));
+        isThirdPartyHost(domain.substring(1), contextParams.domain));
 
       // Get the domains that should be considered
-      let shouldBlockDomains = domains.filter((domain) =>
-        domain[0] !== '~' &&
+      let potentialShouldBlockDomains = domains.filter((domain) => domain[0] !== '~');
+      let shouldBlockDomains = potentialShouldBlockDomains.filter((domain) =>
         !isThirdPartyHost(domain, contextParams.domain));
-      let shouldSkipDomains = domains.filter((domain) => domain[0] === '~' &&
+
+      let potentialShouldSkipDomains = domains.filter((domain) => domain[0] === '~');
+      let shouldSkipDomains = potentialShouldSkipDomains.filter((domain) =>
         !isThirdPartyHost(domain.substring(1), contextParams.domain));
       // Handle cases like: example.com|~foo.example.com should llow for foo.example.com
       // But ~example.com|foo.example.com should block for foo.example.com
-      let leftOver = shouldBlockDomains.filter((shouldBlockDomain) =>
+      let leftOverBlocking = shouldBlockDomains.filter((shouldBlockDomain) =>
         shouldSkipDomains.every((shouldSkipDomain) =>
-          isThirdPartyHost(shouldBlockDomain, shouldSkipDomain)));
+          isThirdPartyHost(
+            shouldBlockDomain,
+            shouldSkipDomain.substring(1)
+            )));
+      let leftOverSkipping = shouldSkipDomains.filter((shouldSkipDomain) =>
+        shouldBlockDomains.every((shouldBlockDomain) =>
+          isThirdPartyHost(
+            shouldSkipDomain.substring(1),
+            shouldBlockDomain
+            )));
+
       // If we have none left over, then we shouldn't consider this a match
-      if (leftOver.length === 0) {
+      if (shouldBlockDomains.length === 0 && potentialShouldBlockDomains.length !== 0 ||
+          shouldBlockDomains.length > 0 && leftOverBlocking.length === 0 ||
+          shouldSkipDomains.length > 0 && leftOverSkipping.length > 0) {
         return false;
       }
     }
