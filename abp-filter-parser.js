@@ -198,7 +198,50 @@ function indexOfFilter(input, filter, startingPos) {
   return beginIndex;
 }
 
-export function matchesFilter(parsedFilterData, input) {
+function getUrlHost(input) {
+  let domainIndexStart = getDomainIndex(input);
+  let domainIndexEnd = findFirstSeparatorChar(input, domainIndexStart);
+  if (domainIndexEnd === -1) {
+    domainIndexEnd = input.length;
+  }
+  return input.substring(domainIndexStart, domainIndexEnd);
+}
+
+function filterDataContainsOption(parsedFilterData, option) {
+  return parsedFilterData.options &&
+    parsedFilterData.options.includes(option);
+}
+
+function isThirdPartyHost(baseContextHost, testHost) {
+  let index = testHost.indexOf(baseContextHost);
+  if (index === -1) {
+    return false;
+  }
+  return index + baseContextHost.length !== testHost.length;
+}
+
+// Determines if there's a match based on the options, this doesn't
+// mean that the filter rule shoudl be accepted, just that the filter rule
+// should be considered given the current context.
+function matchOptions(parsedFilterData, input, contextParams = {}) {
+  // If we're in the context of third-party site, then consider third-party option checks
+  if (contextParams['third-party'] !== undefined) {
+    // Is the current rule check for third party only?
+    if (filterDataContainsOption(parsedFilterData, 'third-party')) {
+      let inputHost = getUrlHost(input);
+      let inputHostIsThirdParty = isThirdPartyHost(parsedFilterData.domain, inputHost);
+      return !inputHostIsThirdParty && contextParams['third-party'];
+    }
+  }
+
+  return true;
+}
+
+export function matchesFilter(parsedFilterData, input, contextParams = {}) {
+  if (!matchOptions(parsedFilterData, input, contextParams)) {
+    return false;
+  }
+
   // Check for a regex match
   if (parsedFilterData.isRegex) {
     if (!parsedFilterData.regex) {
@@ -224,12 +267,7 @@ export function matchesFilter(parsedFilterData, input) {
 
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
-    let domainIndexStart = getDomainIndex(input);
-    let domainIndexEnd = findFirstSeparatorChar(input, domainIndexStart);
-    if (domainIndexEnd === -1) {
-      domainIndexEnd = input.length;
-    }
-    let inputHost = input.substring(domainIndexStart, domainIndexEnd);
+    let inputHost = getUrlHost(input);
     let matchIndex = inputHost.lastIndexOf(parsedFilterData.host);
     return (matchIndex === 0 || inputHost[matchIndex - 1] === '.') &&
       inputHost.length <= matchIndex + parsedFilterData.host.length &&
@@ -252,10 +290,10 @@ export function matchesFilter(parsedFilterData, input) {
 
 export function matches(parserData, input, contextParams = {}) {
   if (parserData.exceptionFilters.some((parsedFilterData) =>
-      matchesFilter(parsedFilterData, input))) {
+      matchesFilter(parsedFilterData, input, contextParams))) {
     return false;
   }
 
   return parserData.filters.some((parsedFilterData) =>
-    matchesFilter(parsedFilterData, input));
+    matchesFilter(parsedFilterData, input, contextParams));
 }

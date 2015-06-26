@@ -266,6 +266,15 @@ let optionRules = new Map([
     ['http://example.com', {'third-party': true}, true],
     ['http://example2.com', {'third-party': true}, false],
     ['http://example.com', {'third-party': false}, true],
+  ])], ['||example.com^$third-party', new Set([
+    ['http://example.com', {'third-party': true}, true],
+    ['http://example.com', {'third-party': false}, false],
+    ['http://ad.example.com', {'third-party': true}, true],
+    ['http://ad.example.com', {'third-party': false}, false],
+    ['http://example2.com', {'third-party': true}, false],
+    ['http://example2.com', {'third-party': false}, false],
+    ['http://example.com.au', {'third-party': true}, false],
+    ['http://example.com.au', {'third-party': false}, false],
   ])],
 ]);
 
@@ -313,7 +322,7 @@ describe('#parseFilter()', function(){
       setOfTests.forEach((testData) => {
         let [testUrl, contextParams, shouldBlock] = testData;
         assert.equal(matches(parserData, testUrl, contextParams), shouldBlock,
-          `${filterRule} ` + (shouldBlock ? 'block' : 'not block') + ` ${testUrl} ` +
+          `${filterRule} should ` + (shouldBlock ? 'block' : 'not block') + ` ${testUrl} ` +
           `with context params: ${JSON.stringify(contextParams)}`);
       });
     });
