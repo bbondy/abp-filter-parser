@@ -322,6 +322,12 @@ let optionRules = new Map([
     ['http://example.net/adv', {'domain': 'example.com', 'script': false}, false],
     ['http://example.net/adv', {'domain': 'foo.example.com', 'script': false}, false],
     ['http://example.net/adv', {'domain': 'www.foo.example.com', 'script': false}, false],
+  ])], [`adv
+         @@advice.$~script`, new Set([
+    ['http://example.com/advice.html', {'script': false}, false],
+    ['http://example.com/advice.html', {'script': true}, true],
+    ['http://example.com/advert.html', {'script': false}, true],
+    ['http://example.com/advert.html', {'script': true}, true],
   ])],
 ]);
 
@@ -374,8 +380,6 @@ describe('#parseFilter()', function(){
       });
     });
   });
-
-
 });
 
 describe('#parse()', function(){

@@ -71,7 +71,7 @@ export function parseFilter(input, parsedFilterData) {
   // Check for options, regex can have options too so check this before regex
   index = input.indexOf('$', beginIndex);
   if (index !== -1) {
-    parsedFilterData.options = input.substring(beginIndex + index + 1).split(',');
+    parsedFilterData.options = input.substring(index + 1).split(',');
     // Get rid of the trailing options for the rest of the parsing
     input = input.substring(0, index);
   }
@@ -231,7 +231,6 @@ function isThirdPartyHost(baseContextHost, testHost) {
 // By specifying context params, you can filter out the number of rules which are
 // considered.
 function matchOptions(parsedFilterData, input, contextParams = {}) {
-
   // Lazilly fill this out to be more efficient
   // Element type checks
   let elementTypeParams = ['script', 'image', 'stylesheet', 'object',
@@ -269,16 +268,10 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
       // But ~example.com|foo.example.com should block for foo.example.com
       let leftOverBlocking = shouldBlockDomains.filter((shouldBlockDomain) =>
         shouldSkipDomains.every((shouldSkipDomain) =>
-          isThirdPartyHost(
-            shouldBlockDomain,
-            shouldSkipDomain.substring(1)
-            )));
+          isThirdPartyHost(shouldBlockDomain, shouldSkipDomain.substring(1))));
       let leftOverSkipping = shouldSkipDomains.filter((shouldSkipDomain) =>
         shouldBlockDomains.every((shouldBlockDomain) =>
-          isThirdPartyHost(
-            shouldSkipDomain.substring(1),
-            shouldBlockDomain
-            )));
+          isThirdPartyHost(shouldSkipDomain.substring(1), shouldBlockDomain)));
 
       // If we have none left over, then we shouldn't consider this a match
       if (shouldBlockDomains.length === 0 && potentialShouldBlockDomains.length !== 0 ||
