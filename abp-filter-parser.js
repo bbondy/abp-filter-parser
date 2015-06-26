@@ -213,17 +213,27 @@ function filterDataContainsOption(parsedFilterData, option) {
 }
 
 function isThirdPartyHost(baseContextHost, testHost) {
-  let index = testHost.indexOf(baseContextHost);
-  if (index === -1) {
-    return false;
+  if (!testHost.endsWith(baseContextHost)) {
+    return true;
   }
-  return index + baseContextHost.length !== testHost.length;
+
+  let prefix = testHost.slice(0, -baseContextHost.length);
+  if (prefix.length > 0 && !prefix.endsWith('.')) {
+    return true;
+  }
+
+  return false;
 }
 
 // Determines if there's a match based on the options, this doesn't
 // mean that the filter rule shoudl be accepted, just that the filter rule
 // should be considered given the current context.
+// By specifying context params, you can filter out the number of rules which are
+// considered.
 function matchOptions(parsedFilterData, input, contextParams = {}) {
+
+  // Lazilly fill this out to be more efficient
+  // Element type checks
   let elementTypeParams = ['script', 'image', 'stylesheet', 'object',
    'xmlhttprequest', 'object-subrequest', 'subdocument', 'document', 'other'];
   for (let elementType of elementTypeParams) {
@@ -238,12 +248,25 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
     }
   }
 
+  // Domain option check
+  if (contextParams.domain !== undefined && parsedFilterData.options) {
+    let domainOption = parsedFilterData.options.find((parsedFilter) =>
+      parsedFilter.startsWith('domain'));
+    if (domainOption) {
+      let domains = domainOption.split('=')[1].trim().split('|');
+      if (domains.every((domain) =>
+        isThirdPartyHost(domain, contextParams.domain))) {
+        return false;
+      }
+    }
+  }
+
   // If we're in the context of third-party site, then consider third-party option checks
   if (contextParams['third-party'] !== undefined) {
     // Is the current rule check for third party only?
     if (filterDataContainsOption(parsedFilterData, 'third-party')) {
       let inputHost = getUrlHost(input);
-      let inputHostIsThirdParty = isThirdPartyHost(parsedFilterData.domain, inputHost);
+      let inputHostIsThirdParty = isThirdPartyHost(parsedFilterData.host, inputHost);
       if (inputHostIsThirdParty || !contextParams['third-party']) {
         return false;
       }
