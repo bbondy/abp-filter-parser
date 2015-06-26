@@ -275,7 +275,13 @@ let optionRules = new Map([
     ['http://example2.com', {'third-party': false}, false],
     ['http://example.com.au', {'third-party': true}, false],
     ['http://example.com.au', {'third-party': false}, false],
+  ])], ['||example.com^$third-party,~script', new Set([
+    ['http://example.com', {'third-party': true, 'script': true}, false],
+    ['http://example.com', {'third-party': true, 'script': false}, true],
+    ['http://example2.com', {'third-party': true, 'script': false}, false],
+    ['http://example.com', {'third-party': false, 'script': false}, false],
   ])],
+
 ]);
 
 
