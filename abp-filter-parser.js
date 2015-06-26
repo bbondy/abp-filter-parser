@@ -224,13 +224,17 @@ function isThirdPartyHost(baseContextHost, testHost) {
 // mean that the filter rule shoudl be accepted, just that the filter rule
 // should be considered given the current context.
 function matchOptions(parsedFilterData, input, contextParams = {}) {
-  // Check for script context
-  if (contextParams['script'] !== undefined) {
-    if (!contextParams['script'] && filterDataContainsOption(parsedFilterData, 'script')) {
-      return false;
-    }
-    else if (contextParams['script'] && filterDataContainsOption(parsedFilterData, '~script')) {
-      return false;
+  let elementTypeParams = ['script', 'image', 'stylesheet', 'object',
+   'xmlhttprequest', 'object-subrequest', 'subdocument', 'document', 'other'];
+  for (let elementType of elementTypeParams) {
+    // Check for script context
+    if (contextParams[elementType] !== undefined) {
+      if (!contextParams[elementType] && filterDataContainsOption(parsedFilterData, elementType)) {
+        return false;
+      }
+      else if (contextParams[elementType] && filterDataContainsOption(parsedFilterData, '~' + elementType)) {
+        return false;
+      }
     }
   }
 
