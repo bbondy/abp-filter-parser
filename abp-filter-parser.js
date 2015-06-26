@@ -256,8 +256,20 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
       let domains = domainOption.split('=')[1].trim().split('|');
       let shouldSkipDomainCheck = domains.some((domain) => domain[0] === '~' &&
         !isThirdPartyHost(domain.substring(1), contextParams.domain));
-      if (shouldSkipDomainCheck || domains.every((domain) =>
-          isThirdPartyHost(domain, contextParams.domain))) {
+
+      // Get the domains that should be considered
+      let shouldBlockDomains = domains.filter((domain) =>
+        domain[0] !== '~' &&
+        !isThirdPartyHost(domain, contextParams.domain));
+      let shouldSkipDomains = domains.filter((domain) => domain[0] === '~' &&
+        !isThirdPartyHost(domain.substring(1), contextParams.domain));
+      // Handle cases like: example.com|~foo.example.com should llow for foo.example.com
+      // But ~example.com|foo.example.com should block for foo.example.com
+      let leftOver = shouldBlockDomains.filter((shouldBlockDomain) =>
+        shouldSkipDomains.every((shouldSkipDomain) =>
+          isThirdPartyHost(shouldBlockDomain, shouldSkipDomain)));
+      // If we have none left over, then we shouldn't consider this a match
+      if (leftOver.length === 0) {
         return false;
       }
     }
