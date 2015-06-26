@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --compilers js:babel/register",
-    "lint": "eslint abp-filter-parser.js test/test.js"
+    "lint": "eslint abp-filter-parser.js test/*.js"
   },
   "author": "",
   "license": "MPL-2.0",

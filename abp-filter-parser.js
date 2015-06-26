@@ -29,6 +29,22 @@ var filterOptions = new Set([
 
 const separatorCharacters = ':?/=^';
 
+
+export function parseOptions(input) {
+  let output = {
+    binaryOptions: [],
+  };
+  input.split(',').forEach((option) => {
+    option = option.trim();
+    if (option.startsWith('domain=')) {
+      output.domains = option.split('=')[1].trim().split('|');
+    } else {
+      output.binaryOptions.push(option);
+    }
+  });
+  return output;
+}
+
 function findFirstSeparatorChar(input, startPos) {
   for (let i = startPos; i < input.length; i++) {
     if (separatorCharacters.indexOf(input[i]) !== -1) {
@@ -71,7 +87,7 @@ export function parseFilter(input, parsedFilterData) {
   // Check for options, regex can have options too so check this before regex
   index = input.indexOf('$', beginIndex);
   if (index !== -1) {
-    parsedFilterData.options = input.substring(index + 1).split(',');
+    parsedFilterData.options = parseOptions(input.substring(index + 1));
     // Get rid of the trailing options for the rest of the parsing
     input = input.substring(0, index);
   }
@@ -209,7 +225,7 @@ function getUrlHost(input) {
 
 function filterDataContainsOption(parsedFilterData, option) {
   return parsedFilterData.options &&
-    parsedFilterData.options.includes(option);
+    parsedFilterData.options.binaryOptions.includes(option);
 }
 
 function isThirdPartyHost(baseContextHost, testHost) {
@@ -249,19 +265,13 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
 
   // Domain option check
   if (contextParams.domain !== undefined && parsedFilterData.options) {
-    let domainOption = parsedFilterData.options.find((parsedFilter) =>
-      parsedFilter.startsWith('domain'));
-    if (domainOption) {
-      let domains = domainOption.split('=')[1].trim().split('|');
-      let shouldSkipDomainCheck = domains.some((domain) => domain[0] === '~' &&
-        isThirdPartyHost(domain.substring(1), contextParams.domain));
-
+    if (parsedFilterData.options.domains) {
       // Get the domains that should be considered
-      let potentialShouldBlockDomains = domains.filter((domain) => domain[0] !== '~');
+      let potentialShouldBlockDomains = parsedFilterData.options.domains.filter((domain) => domain[0] !== '~');
       let shouldBlockDomains = potentialShouldBlockDomains.filter((domain) =>
         !isThirdPartyHost(domain, contextParams.domain));
 
-      let potentialShouldSkipDomains = domains.filter((domain) => domain[0] === '~');
+      let potentialShouldSkipDomains = parsedFilterData.options.domains.filter((domain) => domain[0] === '~');
       let shouldSkipDomains = potentialShouldSkipDomains.filter((domain) =>
         !isThirdPartyHost(domain.substring(1), contextParams.domain));
       // Handle cases like: example.com|~foo.example.com should llow for foo.example.com
