@@ -37,7 +37,9 @@ export function parseOptions(input) {
   input.split(',').forEach((option) => {
     option = option.trim();
     if (option.startsWith('domain=')) {
-      output.domains = option.split('=')[1].trim().split('|');
+      let domains = option.split('=')[1].trim().split('|');
+      output.domains = domains.filter((domain) => domain[0] !== '~')
+      output.skipDomains = domains.filter((domain) => domain[0] === '~')
     } else {
       output.binaryOptions.push(option);
     }
@@ -65,6 +67,7 @@ export function parseFilter(input, parsedFilterData) {
   // Check for comments
   let beginIndex = 0;
   if (input[beginIndex] === '[' || input[beginIndex] === '!') {
+    parsedFilterData.isComment = true;
     return false;
   }
 
@@ -265,14 +268,12 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
 
   // Domain option check
   if (contextParams.domain !== undefined && parsedFilterData.options) {
-    if (parsedFilterData.options.domains) {
+    if (parsedFilterData.options.domains || parsedFilterData.options.skipDomains) {
       // Get the domains that should be considered
-      let potentialShouldBlockDomains = parsedFilterData.options.domains.filter((domain) => domain[0] !== '~');
-      let shouldBlockDomains = potentialShouldBlockDomains.filter((domain) =>
+      let shouldBlockDomains = parsedFilterData.options.domains.filter((domain) =>
         !isThirdPartyHost(domain, contextParams.domain));
 
-      let potentialShouldSkipDomains = parsedFilterData.options.domains.filter((domain) => domain[0] === '~');
-      let shouldSkipDomains = potentialShouldSkipDomains.filter((domain) =>
+      let shouldSkipDomains = parsedFilterData.options.skipDomains.filter((domain) =>
         !isThirdPartyHost(domain.substring(1), contextParams.domain));
       // Handle cases like: example.com|~foo.example.com should llow for foo.example.com
       // But ~example.com|foo.example.com should block for foo.example.com
@@ -284,7 +285,7 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
           isThirdPartyHost(shouldSkipDomain.substring(1), shouldBlockDomain)));
 
       // If we have none left over, then we shouldn't consider this a match
-      if (shouldBlockDomains.length === 0 && potentialShouldBlockDomains.length !== 0 ||
+      if (shouldBlockDomains.length === 0 && parsedFilterData.options.domains.length !== 0 ||
           shouldBlockDomains.length > 0 && leftOverBlocking.length === 0 ||
           shouldSkipDomains.length > 0 && leftOverSkipping.length > 0) {
         return false;
