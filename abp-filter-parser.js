@@ -250,7 +250,7 @@ export function matchesFilter(parsedFilterData, input) {
   return true;
 }
 
-export function matches(parserData, input) {
+export function matches(parserData, input, contextParams = {}) {
   if (parserData.exceptionFilters.some((parsedFilterData) =>
       matchesFilter(parsedFilterData, input))) {
     return false;

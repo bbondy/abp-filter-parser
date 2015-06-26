@@ -260,6 +260,16 @@ let exceptionRules = new Map([
   }],
 ]);
 
+// Map from a key with a ABP filter rule to a set of [testUrl, context params, should block?]
+let optionRules = new Map([
+  ['||example.com', new Set([
+    ['http://example.com', {'third-party': true}, true],
+    ['http://example2.com', {'third-party': true}, false],
+    ['http://example.com', {'third-party': false}, true],
+  ])],
+]);
+
+
 describe('#parseFilter()', function(){
   it('should extract proper parsing info for filter rules', function() {
     testRules.forEach((testRule, key) => {
@@ -295,6 +305,20 @@ describe('#parseFilter()', function(){
       }
     });
   });
+
+  it('Option and param context rules work correctly', function() {
+    // Map from a key with a ABP filter rule to a set of [testUrl, context params, should block?]
+    optionRules.forEach((setOfTests, filterRule) => {
+      let parserData = parse(filterRule);
+      setOfTests.forEach((testData) => {
+        let [testUrl, contextParams, shouldBlock] = testData;
+        assert.equal(matches(parserData, testUrl, contextParams), shouldBlock,
+          `${filterRule} ` + (shouldBlock ? 'block' : 'not block') + ` ${testUrl} ` +
+          `with context params: ${JSON.stringify(contextParams)}`);
+      });
+    });
+  });
+
 
 });
 
