@@ -254,8 +254,10 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
       parsedFilter.startsWith('domain'));
     if (domainOption) {
       let domains = domainOption.split('=')[1].trim().split('|');
-      if (domains.every((domain) =>
-        isThirdPartyHost(domain, contextParams.domain))) {
+      let shouldSkipDomainCheck = domains.some((domain) => domain[0] === '~' &&
+        !isThirdPartyHost(domain.substring(1), contextParams.domain));
+      if (shouldSkipDomainCheck || domains.every((domain) =>
+          isThirdPartyHost(domain, contextParams.domain))) {
         return false;
       }
     }

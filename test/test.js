@@ -288,7 +288,12 @@ let optionRules = new Map([
     ['http://example.com/adv', {'domain': 'badexample.com'}, false],
     ['http://example.com/adv', {'domain': 'otherdomain.net'}, false],
     ['http://example.net/ad', {'domain': 'example.net'}, false],
-  ])]
+  ])], ['adv$domain=example.com|~foo.example.com', new Set([
+    ['http://example.net/adv', {'domain': 'example.com'}, true],
+    ['http://example.net/adv', {'domain': 'foo.example.com'}, false],
+    ['http://example.net/adv', {'domain': 'www.foo.example.com'}, false],
+  ])],
+
 ]);
 
 
