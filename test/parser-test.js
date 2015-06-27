@@ -332,7 +332,7 @@ let optionRules = new Map([
 ]);
 
 
-describe('#parseFilter()', function(){
+describe('#parseFilter()', function() {
   it('should extract proper parsing info for filter rules', function() {
     testRules.forEach((testRule, key) => {
       let parsedFilterData = {};
@@ -382,8 +382,8 @@ describe('#parseFilter()', function(){
   });
 });
 
-describe('#parse()', function(){
-  it('should parse EasyList without failing', function(cb){
+describe('#parse()', function() {
+  it('should parse EasyList without failing', function(cb) {
     fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
       if (err) {
         return console.log(err);

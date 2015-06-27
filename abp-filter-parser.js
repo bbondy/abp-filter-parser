@@ -39,7 +39,9 @@ export function parseOptions(input) {
     if (option.startsWith('domain=')) {
       let domains = option.split('=')[1].trim().split('|');
       output.domains = domains.filter((domain) => domain[0] !== '~')
-      output.skipDomains = domains.filter((domain) => domain[0] === '~')
+      output.skipDomains = domains
+        .filter((domain) => domain[0] === '~')
+        .map((domain) => domain.substring(1));
     } else {
       output.binaryOptions.push(option);
     }
@@ -274,15 +276,15 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
         !isThirdPartyHost(domain, contextParams.domain));
 
       let shouldSkipDomains = parsedFilterData.options.skipDomains.filter((domain) =>
-        !isThirdPartyHost(domain.substring(1), contextParams.domain));
+        !isThirdPartyHost(domain, contextParams.domain));
       // Handle cases like: example.com|~foo.example.com should llow for foo.example.com
       // But ~example.com|foo.example.com should block for foo.example.com
       let leftOverBlocking = shouldBlockDomains.filter((shouldBlockDomain) =>
         shouldSkipDomains.every((shouldSkipDomain) =>
-          isThirdPartyHost(shouldBlockDomain, shouldSkipDomain.substring(1))));
+          isThirdPartyHost(shouldBlockDomain, shouldSkipDomain)));
       let leftOverSkipping = shouldSkipDomains.filter((shouldSkipDomain) =>
         shouldBlockDomains.every((shouldBlockDomain) =>
-          isThirdPartyHost(shouldSkipDomain.substring(1), shouldBlockDomain)));
+          isThirdPartyHost(shouldSkipDomain, shouldBlockDomain)));
 
       // If we have none left over, then we shouldn't consider this a match
       if (shouldBlockDomains.length === 0 && parsedFilterData.options.domains.length !== 0 ||
