@@ -37,11 +37,14 @@ export function parseOptions(input) {
   input.split(',').forEach((option) => {
     option = option.trim();
     if (option.startsWith('domain=')) {
+      output.domains = output.domains || [];
+      output.skipDomains = output.skipDomains || [];
+
       let domains = option.split('=')[1].trim().split('|');
-      output.domains = domains.filter((domain) => domain[0] !== '~')
-      output.skipDomains = domains
+      output.domains = output.domains.concat(domains.filter((domain) => domain[0] !== '~'));
+      output.skipDomains = output.skipDomains.concat(domains
         .filter((domain) => domain[0] === '~')
-        .map((domain) => domain.substring(1));
+        .map((domain) => domain.substring(1)));
     } else {
       output.binaryOptions.add(option);
     }
