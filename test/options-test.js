@@ -28,7 +28,7 @@ let splitOptions = new Map([
 
 // Maps option strings to [domains, skipDomains]
 let domainOptionStrings = new Map([
-  ['domain=example.com',[
+  ['domain=example.com', [
     ['example.com'],
     []
   ]], ['domain=example.com|example.net', [
