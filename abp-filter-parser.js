@@ -32,7 +32,7 @@ const separatorCharacters = ':?/=^';
 
 export function parseOptions(input) {
   let output = {
-    binaryOptions: [],
+    binaryOptions: new Set(),
   };
   input.split(',').forEach((option) => {
     option = option.trim();
@@ -43,7 +43,7 @@ export function parseOptions(input) {
         .filter((domain) => domain[0] === '~')
         .map((domain) => domain.substring(1));
     } else {
-      output.binaryOptions.push(option);
+      output.binaryOptions.add(option);
     }
   });
   return output;
@@ -230,7 +230,7 @@ function getUrlHost(input) {
 
 function filterDataContainsOption(parsedFilterData, option) {
   return parsedFilterData.options &&
-    parsedFilterData.options.binaryOptions.includes(option);
+    parsedFilterData.options.binaryOptions.has(option);
 }
 
 function isThirdPartyHost(baseContextHost, testHost) {
