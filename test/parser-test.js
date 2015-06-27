@@ -11,7 +11,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: '/banner/*/img',
     blocked: [
       'http://example.com/banner/foo/img',
@@ -33,7 +33,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: '/banner/*/img^',
     blocked: [
       'http://example.com/banner/foo/img',
@@ -54,7 +54,7 @@ let testRules = new Map([
     hostAnchored: true,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: 'ads.example.com^',
     blocked: [
       'http://ads.example.com/foo.gif',
@@ -74,7 +74,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: true,
     rightAnchored: true,
-    options: undefined,
+    options: {},
     data: 'http://example.com/',
     blocked: [
       'http://example.com/'
@@ -92,7 +92,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: true,
-    options: undefined,
+    options: {},
     data: 'swf',
     blocked: [
       'http://example.com/annoyingflash.swf',
@@ -109,7 +109,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: true,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: 'http://baddomain.example/',
     blocked: [
      'http://baddomain.example/banner.gif',
@@ -126,7 +126,7 @@ let testRules = new Map([
     hostAnchored: true,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: 'example.com/banner.gif',
     blocked: [
       'http://example.com/banner.gif',
@@ -148,7 +148,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: 'http://example.com^',
     blocked: [
       'http://example.com/',
@@ -164,7 +164,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: '^example.com^',
     blocked: [
       'http://example.com:8000/foo.bar?a=12&b=%D1%82%D0%B5%D1%81%D1%82',
@@ -179,7 +179,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: '^%D1%82%D0%B5%D1%81%D1%82^',
     blocked: [
       'http://example.com:8000/foo.bar?a=12&b=%D1%82%D0%B5%D1%81%D1%82',
@@ -196,7 +196,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: '^foo.bar^',
     blocked: [
       'http://example.com:8000/foo.bar?a=12&b=%D1%82%D0%B5%D1%81%D1%82'
@@ -212,7 +212,7 @@ let testRules = new Map([
     hostAnchored: undefined,
     leftAnchored: undefined,
     rightAnchored: undefined,
-    options: undefined,
+    options: {},
     data: 'banner\\d+',
     blocked: [
       'banner123',
@@ -339,8 +339,9 @@ describe('#parseFilter()', function() {
       parseFilter(key, parsedFilterData);
       for (let p in testRule) {
         if (!['blocked', 'notBlocked'].includes(p)) {
-          assert.equal(testRule[p], parsedFilterData[p], `for property ${p}:
-            ${testRule[p]} !== ${parsedFilterData[p]}`);
+          assert.equal(JSON.stringify(testRule[p]),
+            JSON.stringify(parsedFilterData[p]),
+            `for property ${p}: ${testRule[p]} !== ${parsedFilterData[p]}`);
         }
       }
       for (let input of testRule.blocked) {

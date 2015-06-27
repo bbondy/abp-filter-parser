@@ -98,6 +98,8 @@ export function parseFilter(input, parsedFilterData) {
     parsedFilterData.options = parseOptions(input.substring(index + 1));
     // Get rid of the trailing options for the rest of the parsing
     input = input.substring(0, index);
+  } else {
+    parsedFilterData.options = {};
   }
 
   // Check for a regex
@@ -233,6 +235,7 @@ function getUrlHost(input) {
 
 function filterDataContainsOption(parsedFilterData, option) {
   return parsedFilterData.options &&
+    parsedFilterData.options.binaryOptions &&
     parsedFilterData.options.binaryOptions.has(option);
 }
 

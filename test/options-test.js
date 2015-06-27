@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {parseOptions} from '../abp-filter-parser.js';
+import {parseFilter, parseOptions} from '../abp-filter-parser.js';
 
 // Maps option strings to [set of binary options, domains, skipDomains]
 let splitOptions = new Map([
@@ -58,6 +58,30 @@ let domainOptionStrings = new Map([
   ]],
 ]);
 
+let parseOptionTests = new Map([
+  ['domain=foo.bar', [
+    undefined,
+    undefined,
+    undefined,
+  ]], ['+Ads/$~stylesheet', [
+    new Set(['~stylesheet']),
+    undefined,
+    undefined,
+  ]], ['-advertising-$domain=~advertise.bingads.domain.com', [
+    new Set(),
+    [],
+    ['advertise.bingads.domain.com'],
+  ]], ['.se/?placement=$script,third-party', [
+    new Set(['script', 'third-party']),
+    undefined,
+    undefined,
+  ]], ['||tst.net^$object-subrequest,third-party,domain=domain1.com|domain5.com', [
+    new Set(['object-subrequest', 'third-party']),
+    ['domain1.com', 'domain5.com'],
+    [],
+  ]],
+]);
+
 describe('#parseOptions()', function() {
   it('Option parsing should split options properly', function() {
     splitOptions.forEach(([expectedOptions, domains, skipDomains], optionsString) => {
@@ -72,6 +96,15 @@ describe('#parseOptions()', function() {
       let options = parseOptions(optionsString);
       assert.equal(JSON.stringify(options.domains), JSON.stringify(domains));
       assert.equal(JSON.stringify(options.skipDomains), JSON.stringify(skipDomains));
+    });
+  });
+  it('parseFilter for full rules properly extracts options', function() {
+    parseOptionTests.forEach(([expectedOptions, domains, skipDomains], filterString) => {
+      let parsedFilterOptions = {};
+      parseFilter(filterString, parsedFilterOptions);
+      assert.equal(JSON.stringify(parsedFilterOptions.options.binaryOptions), JSON.stringify(expectedOptions));
+      assert.equal(JSON.stringify(parsedFilterOptions.options.domains), JSON.stringify(domains));
+      assert.equal(JSON.stringify(parsedFilterOptions.options.skipDomains), JSON.stringify(skipDomains));
     });
   });
 });
