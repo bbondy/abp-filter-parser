@@ -30,8 +30,11 @@ describe('#parse()', function(){
       parseFilter(commentRule, parsedFilterData);
       assert(parsedFilterData.isComment, `${commentRule} should be marked as a comment`);
     });
-    elementHidingRules.forEach(commentRule => {
-      // TODO
+    elementHidingRules.forEach(elementHidingRule => {
+      let parsedFilterData = {};
+      parseFilter(elementHidingRule, parsedFilterData);
+      assert(parsedFilterData.elementHiding);
+      assert(parsedFilterData.elementHidingException !== undefined);
     });
   });
 });
