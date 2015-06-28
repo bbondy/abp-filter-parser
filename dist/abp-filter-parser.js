@@ -1,4 +1,16 @@
-define('abp-filter-parser', ['exports'], function (exports) {
+(function (global, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('abp-filter-parser', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    var mod = {
+      exports: {}
+    };
+    factory(mod.exports);
+    global.abpFilterParser = mod.exports;
+  }
+})(this, function (exports) {
   /*
   var filterOptions = new Set([
     // Include or exclude JavaScript files.

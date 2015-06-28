@@ -5,7 +5,7 @@
   "scripts": {
     "test": "mocha --compilers js:babel/register",
     "lint": "eslint abp-filter-parser.js test/*.js",
-    "build": "babel --modules amd abp-filter-parser.js --out-file dist/abp-filter-parser.js  --module-ids \"abp-filter-parser.js\" --source-maps"
+    "build": "babel --modules umd abp-filter-parser.js --out-file dist/abp-filter-parser.js  --module-ids \"abp-filter-parser.js\" --source-maps"
   },
   "author": "",
   "license": "MPL-2.0",
