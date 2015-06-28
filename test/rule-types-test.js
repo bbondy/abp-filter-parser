@@ -23,7 +23,7 @@ let elementHidingRules = new Set([
   '##a[href^=\'http://affiliate.sometracker.com/\']',
 ]);
 
-describe('#parse()', function(){
+describe('rule-types#parse()', function(){
   it('rule types should be properly detected', function(){
     commentRules.forEach(commentRule => {
       let parsedFilterData = {};
@@ -33,8 +33,8 @@ describe('#parse()', function(){
     elementHidingRules.forEach(elementHidingRule => {
       let parsedFilterData = {};
       parseFilter(elementHidingRule, parsedFilterData);
-      assert(parsedFilterData.elementHiding);
-      assert(parsedFilterData.elementHidingException !== undefined);
+      assert(parsedFilterData.htmlRuleSelector.length > 0);
+      assert(parsedFilterData.isException !== undefined);
     });
   });
 });

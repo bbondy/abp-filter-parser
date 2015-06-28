@@ -29,7 +29,23 @@ var filterOptions = new Set([
 
 const separatorCharacters = ':?/=^';
 
+/**
+ * Parses the domain string using the passed in separator and
+ * fills in options.
+ */
+export function parseDomains(input, separator, options) {
+  options.domains = options.domains || [];
+  options.skipDomains = options.skipDomains || [];
+  let domains = input.split(separator);
+  options.domains = options.domains.concat(domains.filter((domain) => domain[0] !== '~'));
+  options.skipDomains = options.skipDomains.concat(domains
+    .filter((domain) => domain[0] === '~')
+    .map((domain) => domain.substring(1)));
+}
 
+/**
+ * Parses options from the passed in input string
+ */
 export function parseOptions(input) {
   let output = {
     binaryOptions: new Set(),
@@ -37,14 +53,8 @@ export function parseOptions(input) {
   input.split(',').forEach((option) => {
     option = option.trim();
     if (option.startsWith('domain=')) {
-      output.domains = output.domains || [];
-      output.skipDomains = output.skipDomains || [];
-
-      let domains = option.split('=')[1].trim().split('|');
-      output.domains = output.domains.concat(domains.filter((domain) => domain[0] !== '~'));
-      output.skipDomains = output.skipDomains.concat(domains
-        .filter((domain) => domain[0] === '~')
-        .map((domain) => domain.substring(1)));
+      let domainString = option.split('=')[1].trim();
+      parseDomains(domainString, '|', output);
     } else {
       output.binaryOptions.add(option);
     }
@@ -59,6 +69,32 @@ function findFirstSeparatorChar(input, startPos) {
     }
   }
   return -1;
+}
+
+/**
+ * Parses an HTML filter and modifies the passed in parsedFilterData
+ * as necessary.
+ *
+ * @param input: The entire input string to consider
+ * @param index: Index of the first hash
+ * @param parsedFilterData: The parsedFilterData object to fill
+ */
+export function parseHTMLFilter(input, index, parsedFilterData) {
+  let domainsStr = input.substring(0, index);
+  parsedFilterData.options = {};
+  if (domainsStr.length > 0) {
+    parseDomains(domainsStr, ',', parsedFilterData.options)
+  }
+
+  // The XOR parsedFilterData.elementHidingException is in case the rule already
+  // was specified as exception handling with a prefixed @@
+  parsedFilterData.isException = !!(input[index + 1] === '@' ^
+    parsedFilterData.isException);
+  if (input[index + 1] === '@') {
+    // Skip passed the first # since @# is 2 chars same as ##
+    index++;
+  }
+  parsedFilterData.htmlRuleSelector = input.substring(index + 2);
 }
 
 export function parseFilter(input, parsedFilterData) {
@@ -87,8 +123,10 @@ export function parseFilter(input, parsedFilterData) {
   let index = input.indexOf('#', beginIndex);
   if (index !== -1) {
     if (input[index + 1] === '#' || input[index + 1] === '@') {
-      parsedFilterData.elementHiding = input.substring(beginIndex + index + 2);
-      parsedFilterData.elementHidingException = input[beginIndex + index + 1] === '@';
+      parseHTMLFilter(input.substring(beginIndex), index - beginIndex, parsedFilterData);
+      // HTML rules cannot be combined with other parsing,
+      // other than @@ exception marking.
+      return true;
     }
   }
 

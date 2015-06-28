@@ -82,7 +82,7 @@ let parseOptionTests = new Map([
   ]],
 ]);
 
-describe('#parseOptions()', function() {
+describe('options#parseOptions()', function() {
   it('Option parsing should split options properly', function() {
     splitOptions.forEach(([expectedOptions, domains, skipDomains], optionsString) => {
       let options = parseOptions(optionsString);
