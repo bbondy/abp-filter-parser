@@ -357,7 +357,8 @@ describe('parser#parseFilter()', function() {
 
   it('Exception tests work correctly', function() {
     exceptionRules.forEach((testRule, key) => {
-      let parserData = parse(key);
+      let parserData = {};
+      parse(key, parserData);
       for (let input of testRule.blocked) {
         assert(matches(parserData, input),
           `${key} should block ${input}`);
@@ -372,7 +373,8 @@ describe('parser#parseFilter()', function() {
   it('Option and param context rules work correctly', function() {
     // Map from a key with a ABP filter rule to a set of [testUrl, context params, should block?]
     optionRules.forEach((setOfTests, filterRule) => {
-      let parserData = parse(filterRule);
+      let parserData = {};
+      parse(filterRule, parserData);
       setOfTests.forEach((testData) => {
         let [testUrl, contextParams, shouldBlock] = testData;
         assert.equal(matches(parserData, testUrl, contextParams), shouldBlock,
@@ -389,12 +391,28 @@ describe('parser#parse()', function() {
       if (err) {
         return console.log(err);
       }
-      let parserData = parse(data);
+      let parserData = {};
+      parse(data, parserData);
       // Num lines minus (num empty lines + num comment lines)
       assert.equal(parserData.htmlRuleFilters.length, 26465);
       assert.equal(parserData.filters.length, 18096);
       assert.equal(parserData.exceptionFilters.length, 2975);
       cb();
     });
+  });
+  it('Calling parse amongst 2 different lists should preserve both sets of rules', function() {
+    let parserData = {};
+    parse(`adv
+           @@test
+           ###test`, parserData);
+    parse(`adv2
+           @@test2
+           ###test2
+           adv3
+           @@test3
+           ###test3`, parserData);
+    assert.equal(parserData.htmlRuleFilters.length, 3);
+    assert.equal(parserData.filters.length, 3);
+    assert.equal(parserData.exceptionFilters.length, 3);
   });
 });

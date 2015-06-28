@@ -173,13 +173,10 @@ export function parseFilter(input, parsedFilterData) {
   return true;
 }
 
-export function parse(input) {
-  let parserData = {
-    filters: [],
-    exceptionFilters: [],
-    htmlRuleFilters: [],
-  };
-
+export function parse(input, parserData) {
+  parserData.filters = parserData.filters || [];
+  parserData.exceptionFilters = parserData.exceptionFilters  || [];
+  parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
   let startPos = 0;
   let endPos = input.length;
   let newline = '\n';
