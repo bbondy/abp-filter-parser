@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/bbondy/abp-filter-parser.svg?branch=master)](https://travis-ci.org/bbondy/abp-filter-parser)
-
 # abp-filter-parser
 JavaScript Adblock Plus filter parser for lists like EasyList
+
+[![Build Status](https://travis-ci.org/bbondy/abp-filter-parser.svg?branch=master)](https://travis-ci.org/bbondy/abp-filter-parser)
 
 Parses filter rules as per:
 - https://adblockplus.org/en/filters
