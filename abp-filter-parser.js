@@ -177,6 +177,7 @@ export function parse(input) {
   let parserData = {
     filters: [],
     exceptionFilters: [],
+    htmlRuleFilters: [],
   };
 
   let startPos = 0;
@@ -194,7 +195,9 @@ export function parse(input) {
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
     if (parseFilter(filter, parsedFilterData)) {
-      if (parsedFilterData.isException) {
+      if (parsedFilterData.htmlRuleSelector) {
+        parserData.htmlRuleFilters.push(parsedFilterData);
+      } else if (parsedFilterData.isException) {
         parserData.exceptionFilters.push(parsedFilterData);
       } else {
         parserData.filters.push(parsedFilterData);
