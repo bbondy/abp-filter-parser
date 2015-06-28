@@ -1,6 +1,6 @@
 (function (global, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('abp-filter-parser', ['exports'], factory);
+    define(['exports'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports);
   } else {
