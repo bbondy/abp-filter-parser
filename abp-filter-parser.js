@@ -175,7 +175,6 @@ export function parseFilter(input, parsedFilterData) {
 
 export function parse(input) {
   let parserData = {
-    filterCount: 0,
     filters: [],
     exceptionFilters: [],
   };
@@ -200,7 +199,6 @@ export function parse(input) {
       } else {
         parserData.filters.push(parsedFilterData);
       }
-      parserData.filterCount++;
     }
     startPos = endPos + 1;
   }

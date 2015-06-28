@@ -391,7 +391,8 @@ describe('parser#parse()', function() {
       }
       let parserData = parse(data);
       // Num lines minus (num empty lines + num comment lines)
-      assert.equal(parserData.filterCount, 47536);
+      assert.equal(parserData.filters.length, 43942);
+      assert.equal(parserData.exceptionFilters.length, 3594);
       cb();
     });
   });
