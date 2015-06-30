@@ -30,7 +30,7 @@ ABPFilterParser.parse(someOtherListOfFilters, parsedFilterData);
 ...
 if (ABPFilterParser.matches(this.parsedFilterData, urlToCheck, {
       domain: currentPageDomain,
-    }))) {
+    })) {
   console.log('should block this URL!');
 } else {
   console.log('should NOT block this URL!');
