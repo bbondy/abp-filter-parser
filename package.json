@@ -5,13 +5,15 @@
   "scripts": {
     "test": "mocha --compilers js:babel/register",
     "lint": "eslint abp-filter-parser.js test/*.js",
-    "build": "babel --modules umd abp-filter-parser.js --out-file dist/abp-filter-parser.js  --source-maps"
+    "build": "babel --modules umd abp-filter-parser.js --out-file dist/abp-filter-parser.js  --source-maps",
+    "build-jsm": "babel --modules ignore --plugins babel-jsm-plugin abp-filter-parser.js --out-file dist/abp-filter-parser.jsm --source-maps"
   },
   "author": "",
   "license": "MPL-2.0",
   "devDependencies": {
     "babel": "^5.6.6",
     "babel-eslint": "^3.1.19",
+    "babel-jsm-plugin": "^1.0.0",
     "eslint": "^0.23.0",
     "mocha": "^2.2.5"
   },
