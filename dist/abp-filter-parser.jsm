@@ -1,3 +1,6 @@
+'use strict';
+
+this.EXPORTED_SYMBOLS = ['parseDomains', 'parseOptions', 'parseHTMLFilter', 'parseFilter', 'parse', 'matchesFilter', 'matches'];
 /*
 var filterOptions = new Set([
   // Include or exclude JavaScript files.
@@ -27,15 +30,12 @@ var filterOptions = new Set([
 ]);
 */
 
-'use strict';
-
 var separatorCharacters = ':?/=^';
 
 /**
  * Parses the domain string using the passed in separator and
  * fills in options.
  */
-
 function parseDomains(input, separator, options) {
   options.domains = options.domains || [];
   options.skipDomains = options.skipDomains || [];
@@ -53,7 +53,6 @@ function parseDomains(input, separator, options) {
 /**
  * Parses options from the passed in input string
  */
-
 function parseOptions(input) {
   var output = {
     binaryOptions: new Set()
@@ -87,7 +86,6 @@ function findFirstSeparatorChar(input, startPos) {
  * @param index: Index of the first hash
  * @param parsedFilterData: The parsedFilterData object to fill
  */
-
 function parseHTMLFilter(input, index, parsedFilterData) {
   var domainsStr = input.substring(0, index);
   parsedFilterData.options = {};
@@ -471,5 +469,12 @@ function matches(parserData, input) {
     return matchesFilter(parsedFilterData, input, contextParams);
   });
 }
+this.parseDomains = parseDomains;
+this.parseOptions = parseOptions;
+this.parseHTMLFilter = parseHTMLFilter;
+this.parseFilter = parseFilter;
+this.parse = parse;
+this.matchesFilter = matchesFilter;
+this.matches = matches;
 
-//# sourceMappingURL=abp-filter-parser.js.map
+//# sourceMappingURL=abp-filter-parser.jsm.map
