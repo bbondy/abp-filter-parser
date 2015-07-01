@@ -12,7 +12,7 @@ Parses filter rules as per:
 Babel / ES6:
 
 ```
-import * as ABPFilterParser from 'js/ext/abp-filter-parser.js';
+import * as ABPFilterParser from 'abp-filter-parser.js';
 ```
 
 Node:
