@@ -397,8 +397,18 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
   return true;
 }
 
-export function matches(parserData, input, contextParams = {}) {
-  let cachedInputData = {};
+const maxCached = 100;
+export function matches(parserData, input, contextParams = {}, cachedInputData = { }) {
+  cachedInputData.misses = cachedInputData.misses || new Set();
+  cachedInputData.missList = cachedInputData.missList || [];
+  if (cachedInputData.missList.length > maxCached) {
+    cachedInputData.misses.delete(cachedInputData.missList[0]);
+    cachedInputData.missList = cachedInputData.missList.splice(1);
+  }
+  if (cachedInputData.misses.has(input)) {
+    return false;
+  }
+
   if (parserData.filters.some((parsedFilterData) =>
     matchesFilter(parsedFilterData, input, contextParams, cachedInputData))) {
     // Check for exceptions only when there's a match because matches are
@@ -407,5 +417,7 @@ export function matches(parserData, input, contextParams = {}) {
       matchesFilter(parsedFilterData, input, contextParams, cachedInputData));
   }
 
+  cachedInputData.missList.push(input);
+  cachedInputData.misses.add(input);
   return false;
 }

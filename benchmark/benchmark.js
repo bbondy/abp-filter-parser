@@ -21,6 +21,7 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
     return console.log(err);
   }
   let parserData = {};
+  let cachedInputData = {};
   parse(data, parserData);
   // Num lines minus (num empty lines + num comment lines)
   var start = process.hrtime();
@@ -28,7 +29,7 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
     matches(parserData, url, {
       domain,
       elementTypeMask: elementTypeMaskMap.get(contentType),
-    });
+    }, cachedInputData);
   });
   elapsed_time(start, 'done');
 });
