@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {parse, parseFilter, matches, matchesFilter} from '../abp-filter-parser.js';
+import {parse, parseFilter, matches, matchesFilter, elementTypes} from '../abp-filter-parser.js';
 import fs from 'fs';
 
 let testRules = new Map([
@@ -276,10 +276,10 @@ let optionRules = new Map([
     ['http://example.com.au', {'third-party': true}, false],
     ['http://example.com.au', {'third-party': false}, false],
   ])], ['||example.com^$third-party,~script', new Set([
-    ['http://example.com', {'third-party': true, 'script': true}, false],
-    ['http://example.com', {'third-party': true, 'script': false}, true],
-    ['http://example2.com', {'third-party': true, 'script': false}, false],
-    ['http://example.com', {'third-party': false, 'script': false}, false],
+    ['http://example.com', {'third-party': true, elementTypeMask: elementTypes.SCRIPT}, false],
+    ['http://example.com', {'third-party': true, elementTypeMask: elementTypes.OTHER}, true],
+    ['http://example2.com', {'third-party': true, elementTypeMask: elementTypes.OTHER}, false],
+    ['http://example.com', {'third-party': false, elementTypeMask: elementTypes.OTHER}, false],
   ])], ['adv$domain=example.com|example.net', new Set([
     ['http://example.net/adv', {'domain': 'example.net'}, true],
     ['http://somewebsite.com/adv', {'domain': 'example.com'}, true],
@@ -316,18 +316,18 @@ let optionRules = new Map([
     ['http://example.com/adv', {'domain': 'otherdomain.net'}, false],
     ['http://example.net/ad', {'domain': 'example.net'}, false],
   ])], ['adv$domain=example.com|~foo.example.com,script', new Set([
-    ['http://example.net/adv', {'domain': 'example.com', 'script': true}, true],
-    ['http://example.net/adv', {'domain': 'foo.example.com', 'script': true}, false],
-    ['http://example.net/adv', {'domain': 'www.foo.example.com', 'script': true}, false],
-    ['http://example.net/adv', {'domain': 'example.com', 'script': false}, false],
-    ['http://example.net/adv', {'domain': 'foo.example.com', 'script': false}, false],
-    ['http://example.net/adv', {'domain': 'www.foo.example.com', 'script': false}, false],
+    ['http://example.net/adv', {'domain': 'example.com', elementTypeMask: elementTypes.SCRIPT}, true],
+    ['http://example.net/adv', {'domain': 'foo.example.com', elementTypeMask: elementTypes.SCRIPT}, false],
+    ['http://example.net/adv', {'domain': 'www.foo.example.com', elementTypeMask: elementTypes.SCRIPT}, false],
+    ['http://example.net/adv', {'domain': 'example.com', elementTypeMask: elementTypes.OTHER}, false],
+    ['http://example.net/adv', {'domain': 'foo.example.com', elementTypeMask: elementTypes.OTHER}, false],
+    ['http://example.net/adv', {'domain': 'www.foo.example.com', elementTypeMask: elementTypes.OTHER}, false],
   ])], [`adv
          @@advice.$~script`, new Set([
-    ['http://example.com/advice.html', {'script': false}, false],
-    ['http://example.com/advice.html', {'script': true}, true],
-    ['http://example.com/advert.html', {'script': false}, true],
-    ['http://example.com/advert.html', {'script': true}, true],
+    ['http://example.com/advice.html', {elementTypeMask: elementTypes.OTHER}, false],
+    ['http://example.com/advice.html', {elementTypeMask: elementTypes.SCRIPT}, true],
+    ['http://example.com/advert.html', {elementTypeMask: elementTypes.OTHER}, true],
+    ['http://example.com/advert.html', {elementTypeMask: elementTypes.SCRIPT}, true],
   ])],
 ]);
 

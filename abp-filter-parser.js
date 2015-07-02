@@ -1,31 +1,26 @@
-/*
-var filterOptions = new Set([
-  // Include or exclude JavaScript files.
-  'script',
-  // Include or exclude image files.
-  'image',
-  // Include or exclude stylesheets (CSS files).
-  'stylesheet',
-  // Include or exclude content handled by browser plugins like Flash
-  // or Java.
-  'object',
-  // Include or exclude files loaded by browser plugins.
-  'object-subrequest',
-  // Include or exclude pages loaded within pages (frames).
-  'subdocument',
-  // Used to whitelist the page itself (e.g. @@||example.com^$document).
-  'document',
-  // Used to prevent element rules from applying on a page
-  // (e.g. @@||example.com^$elemhide).
-  'elemhide',
-  // Specify a list of domains, separated by bar lines (|), on which a
-  // filter should be active. A filter may be prevented from being activated
-  // on a domain by preceding the domain name with a tilde (~).
-  'domain=',
-  // Specify whether a filter should be active on third-party or first domains.
-  'third-party',
+export const elementTypes = {
+  SCRIPT: 0o1,
+  IMAGE: 0o2,
+  STYLESHEET: 0o4,
+  OBJECT: 0o10,
+  XMLHTTPREQUEST: 0o20,
+  OBJECTSUBREQUEST: 0o40,
+  SUBDOCUMENT: 0o100,
+  DOCUMENT: 0o200,
+  OTHER: 0o400,
+};
+
+export const elementTypeMaskMap = new Map([
+  ['script', elementTypes.SCRIPT],
+  ['image', elementTypes.IMAGE],
+  ['stylesheet', elementTypes.STYLESHEET],
+  ['object', elementTypes.OBJECT],
+  ['xmlhttprequest', elementTypes.XMLHTTPREQUEST],
+  ['object-subrequest', elementTypes.OBJECTSUBREQUEST],
+  ['subdocument', elementTypes.SUBDOCUMENT],
+  ['document', elementTypes.DOCUMENT],
+  ['other', elementTypes.OTHER]
 ]);
-*/
 
 const separatorCharacters = ':?/=^';
 
@@ -56,6 +51,14 @@ export function parseOptions(input) {
       let domainString = option.split('=')[1].trim();
       parseDomains(domainString, '|', output);
     } else {
+      let optionWithoutPrefix = option[0] === '~' ? option.substring(1) : option;
+      if (elementTypeMaskMap.has(optionWithoutPrefix)) {
+        if (option[0] === '~') {
+          output.skipElementTypeMask |= elementTypeMaskMap.get(optionWithoutPrefix);
+        } else {
+          output.elementTypeMask |= elementTypeMaskMap.get(optionWithoutPrefix);
+        }
+      }
       output.binaryOptions.add(option);
     }
   });
@@ -293,20 +296,14 @@ function isThirdPartyHost(baseContextHost, testHost) {
 // should be considered given the current context.
 // By specifying context params, you can filter out the number of rules which are
 // considered.
-function matchOptions(parsedFilterData, input, contextParams = {}) {
-  // Lazilly fill this out to be more efficient
-  // Element type checks
-  let elementTypeParams = ['script', 'image', 'stylesheet', 'object',
-   'xmlhttprequest', 'object-subrequest', 'subdocument', 'document', 'other'];
-  for (let elementType of elementTypeParams) {
-    // Check for script context
-    if (contextParams[elementType] !== undefined) {
-      if (!contextParams[elementType] && filterDataContainsOption(parsedFilterData, elementType)) {
-        return false;
-      }
-      else if (contextParams[elementType] && filterDataContainsOption(parsedFilterData, '~' + elementType)) {
-        return false;
-      }
+function matchOptions(parsedFilterData, input, contextParams = {}, cachedInputData = {}) {
+  if (contextParams.elementTypeMask !== undefined && parsedFilterData.options) {
+    if (parsedFilterData.options.elementTypeMask !== undefined &&
+        !(parsedFilterData.options.elementTypeMask & contextParams.elementTypeMask)) {
+      return false;
+    } if (parsedFilterData.options.skipElementTypeMask !== undefined &&
+          parsedFilterData.options.skipElementTypeMask & contextParams.elementTypeMask) {
+      return false;
     }
   }
 
@@ -352,8 +349,8 @@ function matchOptions(parsedFilterData, input, contextParams = {}) {
   return true;
 }
 
-export function matchesFilter(parsedFilterData, input, contextParams = {}) {
-  if (!matchOptions(parsedFilterData, input, contextParams)) {
+export function matchesFilter(parsedFilterData, input, contextParams = {}, cachedInputData = {}) {
+  if (!matchOptions(parsedFilterData, input, contextParams, cachedInputData)) {
     return false;
   }
 
@@ -382,10 +379,13 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}) {
 
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
-    let inputHost = getUrlHost(input);
-    let matchIndex = inputHost.lastIndexOf(parsedFilterData.host);
-    return (matchIndex === 0 || inputHost[matchIndex - 1] === '.') &&
-      inputHost.length <= matchIndex + parsedFilterData.host.length &&
+    if (!cachedInputData.host) {
+      cachedInputData.host = getUrlHost(input);
+    }
+
+    let matchIndex = cachedInputData.host.lastIndexOf(parsedFilterData.host);
+    return (matchIndex === 0 || cachedInputData.host[matchIndex - 1] === '.') &&
+      cachedInputData.host.length <= matchIndex + parsedFilterData.host.length &&
       indexOfFilter(input, parsedFilterData.data) !== -1;
   }
 
@@ -404,11 +404,14 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}) {
 }
 
 export function matches(parserData, input, contextParams = {}) {
-  if (parserData.exceptionFilters.some((parsedFilterData) =>
-      matchesFilter(parsedFilterData, input, contextParams))) {
-    return false;
+  let cachedInputData = {};
+  if (parserData.filters.some((parsedFilterData) =>
+    matchesFilter(parsedFilterData, input, contextParams, cachedInputData))) {
+    // Check for exceptions only when there's a match because matches are
+    // rare compared to the volume of checks
+    return !parserData.exceptionFilters.some((parsedFilterData) =>
+      matchesFilter(parsedFilterData, input, contextParams, cachedInputData));
   }
 
-  return parserData.filters.some((parsedFilterData) =>
-    matchesFilter(parsedFilterData, input, contextParams));
+  return false;
 }

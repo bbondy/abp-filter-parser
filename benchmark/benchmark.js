@@ -1,12 +1,19 @@
 import testData from './test-data-1.js';
-import {parse, matches} from '../abp-filter-parser.js';
+import {elementTypeMaskMap, parse, matches} from '../abp-filter-parser.js';
 import fs from 'fs';
 
+function getElementType(nsContentPolicyType) {
+  if (!contentTypeMap.has(nsContentPolicyType)) {
+    return 'other';
+  }
+  return contentTypeMap.get(nsContentPolicyType);
+}
+
 var elapsed_time = function(start, note){
-    var precision = 3; // 3 decimal places
-    var elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
-    console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
-    start = process.hrtime(); // reset the timer
+  var precision = 3; // 3 decimal places
+  var elapsed = process.hrtime(start)[1] / 1000000; // divide by a million to get nano to milli
+  console.log(process.hrtime(start)[0] + " s, " + elapsed.toFixed(precision) + " ms - " + note); // print message + time
+  start = process.hrtime(); // reset the timer
 }
 
 fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
@@ -20,6 +27,7 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
   testData.forEach(([url, contentType, domain]) => {
     matches(parserData, url, {
       domain,
+      elementTypeMask: elementTypeMaskMap.get(contentType),
     });
   });
   elapsed_time(start, 'done');
