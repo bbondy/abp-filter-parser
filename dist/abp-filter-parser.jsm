@@ -1,34 +1,19 @@
 'use strict';
 
-this.EXPORTED_SYMBOLS = ['parseDomains', 'parseOptions', 'parseHTMLFilter', 'parseFilter', 'parse', 'matchesFilter', 'matches'];
-/*
-var filterOptions = new Set([
-  // Include or exclude JavaScript files.
-  'script',
-  // Include or exclude image files.
-  'image',
-  // Include or exclude stylesheets (CSS files).
-  'stylesheet',
-  // Include or exclude content handled by browser plugins like Flash
-  // or Java.
-  'object',
-  // Include or exclude files loaded by browser plugins.
-  'object-subrequest',
-  // Include or exclude pages loaded within pages (frames).
-  'subdocument',
-  // Used to whitelist the page itself (e.g. @@||example.com^$document).
-  'document',
-  // Used to prevent element rules from applying on a page
-  // (e.g. @@||example.com^$elemhide).
-  'elemhide',
-  // Specify a list of domains, separated by bar lines (|), on which a
-  // filter should be active. A filter may be prevented from being activated
-  // on a domain by preceding the domain name with a tilde (~).
-  'domain=',
-  // Specify whether a filter should be active on third-party or first domains.
-  'third-party',
-]);
-*/
+this.EXPORTED_SYMBOLS = ['elementTypes', 'elementTypeMaskMap', 'parseDomains', 'parseOptions', 'parseHTMLFilter', 'parseFilter', 'parse', 'matchesFilter', 'matches'];
+var elementTypes = {
+  SCRIPT: 1,
+  IMAGE: 2,
+  STYLESHEET: 4,
+  OBJECT: 8,
+  XMLHTTPREQUEST: 16,
+  OBJECTSUBREQUEST: 32,
+  SUBDOCUMENT: 64,
+  DOCUMENT: 128,
+  OTHER: 256
+};
+
+var elementTypeMaskMap = new Map([['script', elementTypes.SCRIPT], ['image', elementTypes.IMAGE], ['stylesheet', elementTypes.STYLESHEET], ['object', elementTypes.OBJECT], ['xmlhttprequest', elementTypes.XMLHTTPREQUEST], ['object-subrequest', elementTypes.OBJECTSUBREQUEST], ['subdocument', elementTypes.SUBDOCUMENT], ['document', elementTypes.DOCUMENT], ['other', elementTypes.OTHER]]);
 
 var separatorCharacters = ':?/=^';
 
@@ -63,6 +48,14 @@ function parseOptions(input) {
       var domainString = option.split('=')[1].trim();
       parseDomains(domainString, '|', output);
     } else {
+      var optionWithoutPrefix = option[0] === '~' ? option.substring(1) : option;
+      if (elementTypeMaskMap.has(optionWithoutPrefix)) {
+        if (option[0] === '~') {
+          output.skipElementTypeMask |= elementTypeMaskMap.get(optionWithoutPrefix);
+        } else {
+          output.elementTypeMask |= elementTypeMaskMap.get(optionWithoutPrefix);
+        }
+      }
       output.binaryOptions.add(option);
     }
   });
@@ -281,12 +274,8 @@ function isThirdPartyHost(baseContextHost, testHost) {
     return true;
   }
 
-  var prefix = testHost.slice(0, -baseContextHost.length);
-  if (prefix.length > 0 && !prefix.endsWith('.')) {
-    return true;
-  }
-
-  return false;
+  var c = testHost[testHost.length - baseContextHost.length - 1];
+  return c !== '.' && c !== undefined;
 }
 
 // Determines if there's a match based on the options, this doesn't
@@ -296,39 +285,13 @@ function isThirdPartyHost(baseContextHost, testHost) {
 // considered.
 function matchOptions(parsedFilterData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
+  var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
 
-  // Lazilly fill this out to be more efficient
-  // Element type checks
-  var elementTypeParams = ['script', 'image', 'stylesheet', 'object', 'xmlhttprequest', 'object-subrequest', 'subdocument', 'document', 'other'];
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = elementTypeParams[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var elementType = _step.value;
-
-      // Check for script context
-      if (contextParams[elementType] !== undefined) {
-        if (!contextParams[elementType] && filterDataContainsOption(parsedFilterData, elementType)) {
-          return false;
-        } else if (contextParams[elementType] && filterDataContainsOption(parsedFilterData, '~' + elementType)) {
-          return false;
-        }
-      }
-    }
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator['return']) {
-        _iterator['return']();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
+  if (contextParams.elementTypeMask !== undefined && parsedFilterData.options) {
+    if (parsedFilterData.options.elementTypeMask !== undefined && !(parsedFilterData.options.elementTypeMask & contextParams.elementTypeMask)) {
+      return false;
+    }if (parsedFilterData.options.skipElementTypeMask !== undefined && parsedFilterData.options.skipElementTypeMask & contextParams.elementTypeMask) {
+      return false;
     }
   }
 
@@ -386,8 +349,9 @@ function matchOptions(parsedFilterData, input) {
 
 function matchesFilter(parsedFilterData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
+  var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
 
-  if (!matchOptions(parsedFilterData, input, contextParams)) {
+  if (!matchOptions(parsedFilterData, input, contextParams, cachedInputData)) {
     return false;
   }
 
@@ -416,21 +380,23 @@ function matchesFilter(parsedFilterData, input) {
 
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
-    var inputHost = getUrlHost(input);
-    var matchIndex = inputHost.lastIndexOf(parsedFilterData.host);
-    return (matchIndex === 0 || inputHost[matchIndex - 1] === '.') && inputHost.length <= matchIndex + parsedFilterData.host.length && indexOfFilter(input, parsedFilterData.data) !== -1;
+    if (!cachedInputData.host) {
+      cachedInputData.host = getUrlHost(input);
+    }
+
+    return !isThirdPartyHost(parsedFilterData.host, cachedInputData.host) && indexOfFilter(input, parsedFilterData.data) !== -1;
   }
 
   // Wildcard match comparison
   var parts = parsedFilterData.data.split('*');
   var index = 0;
-  var _iteratorNormalCompletion2 = true;
-  var _didIteratorError2 = false;
-  var _iteratorError2 = undefined;
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
 
   try {
-    for (var _iterator2 = parts[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-      var part = _step2.value;
+    for (var _iterator = parts[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var part = _step.value;
 
       var newIndex = indexOfFilter(input, part, index);
       if (newIndex === -1) {
@@ -439,16 +405,16 @@ function matchesFilter(parsedFilterData, input) {
       index = newIndex + part.length;
     }
   } catch (err) {
-    _didIteratorError2 = true;
-    _iteratorError2 = err;
+    _didIteratorError = true;
+    _iteratorError = err;
   } finally {
     try {
-      if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-        _iterator2['return']();
+      if (!_iteratorNormalCompletion && _iterator['return']) {
+        _iterator['return']();
       }
     } finally {
-      if (_didIteratorError2) {
-        throw _iteratorError2;
+      if (_didIteratorError) {
+        throw _iteratorError;
       }
     }
   }
@@ -456,19 +422,37 @@ function matchesFilter(parsedFilterData, input) {
   return true;
 }
 
+var maxCached = 100;
 function matches(parserData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
+  var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
 
-  if (parserData.exceptionFilters.some(function (parsedFilterData) {
-    return matchesFilter(parsedFilterData, input, contextParams);
-  })) {
+  cachedInputData.misses = cachedInputData.misses || new Set();
+  cachedInputData.missList = cachedInputData.missList || [];
+  if (cachedInputData.missList.length > maxCached) {
+    cachedInputData.misses['delete'](cachedInputData.missList[0]);
+    cachedInputData.missList = cachedInputData.missList.splice(1);
+  }
+  if (cachedInputData.misses.has(input)) {
     return false;
   }
 
-  return parserData.filters.some(function (parsedFilterData) {
-    return matchesFilter(parsedFilterData, input, contextParams);
-  });
+  if (parserData.filters.some(function (parsedFilterData) {
+    return matchesFilter(parsedFilterData, input, contextParams, cachedInputData);
+  })) {
+    // Check for exceptions only when there's a match because matches are
+    // rare compared to the volume of checks
+    return !parserData.exceptionFilters.some(function (parsedFilterData) {
+      return matchesFilter(parsedFilterData, input, contextParams, cachedInputData);
+    });
+  }
+
+  cachedInputData.missList.push(input);
+  cachedInputData.misses.add(input);
+  return false;
 }
+this.elementTypes = elementTypes;
+this.elementTypeMaskMap = elementTypeMaskMap;
 this.parseDomains = parseDomains;
 this.parseOptions = parseOptions;
 this.parseHTMLFilter = parseHTMLFilter;
