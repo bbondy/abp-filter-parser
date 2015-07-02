@@ -283,12 +283,8 @@ function isThirdPartyHost(baseContextHost, testHost) {
     return true;
   }
 
-  let prefix = testHost.slice(0, -baseContextHost.length);
-  if (prefix.length > 0 && !prefix.endsWith('.')) {
-    return true;
-  }
-
-  return false;
+  let c = testHost[testHost.length - baseContextHost.length - 1]
+  return c !== '.' && c !== undefined;
 }
 
 // Determines if there's a match based on the options, this doesn't
@@ -383,9 +379,7 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
       cachedInputData.host = getUrlHost(input);
     }
 
-    let matchIndex = cachedInputData.host.lastIndexOf(parsedFilterData.host);
-    return (matchIndex === 0 || cachedInputData.host[matchIndex - 1] === '.') &&
-      cachedInputData.host.length <= matchIndex + parsedFilterData.host.length &&
+    return !isThirdPartyHost(parsedFilterData.host, cachedInputData.host) &&
       indexOfFilter(input, parsedFilterData.data) !== -1;
   }
 
