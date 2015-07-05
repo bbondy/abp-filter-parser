@@ -1,3 +1,6 @@
+/**
+ * bitwise mask of different request types
+ */
 export const elementTypes = {
   SCRIPT: 0o1,
   IMAGE: 0o2,
@@ -10,6 +13,9 @@ export const elementTypes = {
   OTHER: 0o400,
 };
 
+/**
+ * Maps element types to type mask.
+ */
 export const elementTypeMaskMap = new Map([
   ['script', elementTypes.SCRIPT],
   ['image', elementTypes.IMAGE],
@@ -65,6 +71,9 @@ export function parseOptions(input) {
   return output;
 }
 
+/**
+ * Finds the first separator character in the input string
+ */
 function findFirstSeparatorChar(input, startPos) {
   for (let i = startPos; i < input.length; i++) {
     if (separatorCharacters.indexOf(input[i]) !== -1) {
@@ -176,6 +185,12 @@ export function parseFilter(input, parsedFilterData) {
   return true;
 }
 
+/**
+ * Parses the set of filter rules and fills in parserData
+ * @param input filter rules
+ * @param parserData out parameter which will be filled
+ *   with the filters, exceptionFilters and htmlRuleFilters.
+ */
 export function parse(input, parserData) {
   parserData.filters = parserData.filters || [];
   parserData.exceptionFilters = parserData.exceptionFilters  || [];
@@ -205,9 +220,11 @@ export function parse(input, parserData) {
     }
     startPos = endPos + 1;
   }
-  return parserData;
 }
 
+/**
+ * Obtains the domain index of the input filter line
+ */
 function getDomainIndex(input) {
   let index = input.indexOf(':');
   ++index;
@@ -217,8 +234,10 @@ function getDomainIndex(input) {
   return index;
 }
 
-// Similar to str1.indexOf(filter, startingPos) but with
-// extra consideration to some ABP filter rules like ^
+/**
+ * Similar to str1.indexOf(filter, startingPos) but with
+ * extra consideration to some ABP filter rules like ^.
+ */
 function indexOfFilter(input, filter, startingPos) {
   if (filter.length > input.length) {
     return -1;
@@ -345,6 +364,9 @@ function matchOptions(parsedFilterData, input, contextParams = {}, cachedInputDa
   return true;
 }
 
+/**
+ * Given an individual parsed filter data determines if the input url should block.
+ */
 export function matchesFilter(parsedFilterData, input, contextParams = {}, cachedInputData = {}) {
   if (!matchOptions(parsedFilterData, input, contextParams, cachedInputData)) {
     return false;
@@ -398,6 +420,13 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
 }
 
 const maxCached = 100;
+
+/**
+ * Using the parserData rules will try to see if the input URL should be blocked or not
+ * @param parserData The filter data obtained from a call to parse
+ * @param input The input URL
+ * @return true if the URL should be blocked
+ */
 export function matches(parserData, input, contextParams = {}, cachedInputData = { }) {
   cachedInputData.misses = cachedInputData.misses || new Set();
   cachedInputData.missList = cachedInputData.missList || [];
