@@ -95,7 +95,7 @@ export function parseHTMLFilter(input, index, parsedFilterData) {
   let domainsStr = input.substring(0, index);
   parsedFilterData.options = {};
   if (domainsStr.length > 0) {
-    parseDomains(domainsStr, ',', parsedFilterData.options)
+    parseDomains(domainsStr, ',', parsedFilterData.options);
   }
 
   // The XOR parsedFilterData.elementHidingException is in case the rule already
@@ -193,7 +193,7 @@ export function parseFilter(input, parsedFilterData) {
  */
 export function parse(input, parserData) {
   parserData.filters = parserData.filters || [];
-  parserData.exceptionFilters = parserData.exceptionFilters  || [];
+  parserData.exceptionFilters = parserData.exceptionFilters || [];
   parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
   let startPos = 0;
   let endPos = input.length;
@@ -302,7 +302,7 @@ function isThirdPartyHost(baseContextHost, testHost) {
     return true;
   }
 
-  let c = testHost[testHost.length - baseContextHost.length - 1]
+  let c = testHost[testHost.length - baseContextHost.length - 1];
   return c !== '.' && c !== undefined;
 }
 
@@ -311,7 +311,7 @@ function isThirdPartyHost(baseContextHost, testHost) {
 // should be considered given the current context.
 // By specifying context params, you can filter out the number of rules which are
 // considered.
-function matchOptions(parsedFilterData, input, contextParams = {}, cachedInputData = {}) {
+function matchOptions(parsedFilterData, input, contextParams = {}) {
   if (contextParams.elementTypeMask !== undefined && parsedFilterData.options) {
     if (parsedFilterData.options.elementTypeMask !== undefined &&
         !(parsedFilterData.options.elementTypeMask & contextParams.elementTypeMask)) {
@@ -368,7 +368,7 @@ function matchOptions(parsedFilterData, input, contextParams = {}, cachedInputDa
  * Given an individual parsed filter data determines if the input url should block.
  */
 export function matchesFilter(parsedFilterData, input, contextParams = {}, cachedInputData = {}) {
-  if (!matchOptions(parsedFilterData, input, contextParams, cachedInputData)) {
+  if (!matchOptions(parsedFilterData, input, contextParams)) {
     return false;
   }
 
