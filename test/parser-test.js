@@ -223,6 +223,22 @@ let testRules = new Map([
       'banners123',
     ],
   }],
+  ['||static.tumblr.com/dhqhfum/WgAn39721/cfh_header_banner_v2.jpg', {
+    isRegex: false,
+    isException: false,
+    elementHiding: undefined,
+    elementHidingException: undefined,
+    hostAnchored: true,
+    leftAnchored: undefined,
+    rightAnchored: undefined,
+    options: {},
+    data: 'static.tumblr.com/dhqhfum/WgAn39721/cfh_header_banner_v2.jpg',
+    blocked: [
+      'http://static.tumblr.com/dhqhfum/WgAn39721/cfh_header_banner_v2.jpg',
+    ],
+    notBlocked: [
+    ],
+  }],
 ]);
 
 let exceptionRules = new Map([
