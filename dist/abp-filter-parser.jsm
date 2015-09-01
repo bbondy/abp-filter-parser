@@ -1,6 +1,9 @@
 'use strict';
 
 this.EXPORTED_SYMBOLS = ['elementTypes', 'elementTypeMaskMap', 'parseDomains', 'parseOptions', 'parseHTMLFilter', 'parseFilter', 'parse', 'matchesFilter', 'matches'];
+/**
+ * bitwise mask of different request types
+ */
 var elementTypes = {
   SCRIPT: 1,
   IMAGE: 2,
@@ -13,6 +16,9 @@ var elementTypes = {
   OTHER: 256
 };
 
+/**
+ * Maps element types to type mask.
+ */
 var elementTypeMaskMap = new Map([['script', elementTypes.SCRIPT], ['image', elementTypes.IMAGE], ['stylesheet', elementTypes.STYLESHEET], ['object', elementTypes.OBJECT], ['xmlhttprequest', elementTypes.XMLHTTPREQUEST], ['object-subrequest', elementTypes.OBJECTSUBREQUEST], ['subdocument', elementTypes.SUBDOCUMENT], ['document', elementTypes.DOCUMENT], ['other', elementTypes.OTHER]]);
 
 var separatorCharacters = ':?/=^';
@@ -62,6 +68,9 @@ function parseOptions(input) {
   return output;
 }
 
+/**
+ * Finds the first separator character in the input string
+ */
 function findFirstSeparatorChar(input, startPos) {
   for (var i = startPos; i < input.length; i++) {
     if (separatorCharacters.indexOf(input[i]) !== -1) {
@@ -170,6 +179,12 @@ function parseFilter(input, parsedFilterData) {
   return true;
 }
 
+/**
+ * Parses the set of filter rules and fills in parserData
+ * @param input filter rules
+ * @param parserData out parameter which will be filled
+ *   with the filters, exceptionFilters and htmlRuleFilters.
+ */
 function parse(input, parserData) {
   parserData.filters = parserData.filters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
@@ -199,9 +214,11 @@ function parse(input, parserData) {
     }
     startPos = endPos + 1;
   }
-  return parserData;
 }
 
+/**
+ * Obtains the domain index of the input filter line
+ */
 function getDomainIndex(input) {
   var index = input.indexOf(':');
   ++index;
@@ -211,8 +228,10 @@ function getDomainIndex(input) {
   return index;
 }
 
-// Similar to str1.indexOf(filter, startingPos) but with
-// extra consideration to some ABP filter rules like ^
+/**
+ * Similar to str1.indexOf(filter, startingPos) but with
+ * extra consideration to some ABP filter rules like ^.
+ */
 function indexOfFilter(input, filter, startingPos) {
   if (filter.length > input.length) {
     return -1;
@@ -285,7 +304,6 @@ function isThirdPartyHost(baseContextHost, testHost) {
 // considered.
 function matchOptions(parsedFilterData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
-  var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
 
   if (contextParams.elementTypeMask !== undefined && parsedFilterData.options) {
     if (parsedFilterData.options.elementTypeMask !== undefined && !(parsedFilterData.options.elementTypeMask & contextParams.elementTypeMask)) {
@@ -347,11 +365,14 @@ function matchOptions(parsedFilterData, input) {
   return true;
 }
 
+/**
+ * Given an individual parsed filter data determines if the input url should block.
+ */
 function matchesFilter(parsedFilterData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
   var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
 
-  if (!matchOptions(parsedFilterData, input, contextParams, cachedInputData)) {
+  if (!matchOptions(parsedFilterData, input, contextParams)) {
     return false;
   }
 
@@ -380,11 +401,11 @@ function matchesFilter(parsedFilterData, input) {
 
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
-    if (!cachedInputData.host) {
-      cachedInputData.host = getUrlHost(input);
+    if (!cachedInputData.currentHost) {
+      cachedInputData.currentHost = getUrlHost(input);
     }
 
-    return !isThirdPartyHost(parsedFilterData.host, cachedInputData.host) && indexOfFilter(input, parsedFilterData.data) !== -1;
+    return !isThirdPartyHost(parsedFilterData.host, cachedInputData.currentHost) && indexOfFilter(input, parsedFilterData.data) !== -1;
   }
 
   // Wildcard match comparison
@@ -423,10 +444,18 @@ function matchesFilter(parsedFilterData, input) {
 }
 
 var maxCached = 100;
+
+/**
+ * Using the parserData rules will try to see if the input URL should be blocked or not
+ * @param parserData The filter data obtained from a call to parse
+ * @param input The input URL
+ * @return true if the URL should be blocked
+ */
 function matches(parserData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
   var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
 
+  delete cachedInputData.currentHost;
   cachedInputData.misses = cachedInputData.misses || new Set();
   cachedInputData.missList = cachedInputData.missList || [];
   if (cachedInputData.missList.length > maxCached) {
