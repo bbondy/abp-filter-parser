@@ -239,6 +239,22 @@ let testRules = new Map([
     notBlocked: [
     ],
   }],
+  ['||googlesyndication.com/safeframe/$third-party', {
+    isRegex: false,
+    isException: false,
+    elementHiding: undefined,
+    elementHidingException: undefined,
+    hostAnchored: true,
+    leftAnchored: undefined,
+    rightAnchored: undefined,
+    options: { 'binaryOptions': ['third-party'] },
+    data: 'googlesyndication.com/safeframe/',
+    blocked: [
+      'http://tpc.googlesyndication.com/safeframe/1-0-2/html/container.html#xpc=sf-gdn-exp-2&p=http%3A//slashdot.org;',
+    ],
+    notBlocked: [
+    ],
+  }],
 ]);
 
 let exceptionRules = new Map([
@@ -350,6 +366,7 @@ let optionRules = new Map([
 
 describe('parser#parseFilter()', function() {
   it('should extract proper parsing info for filter rules', function() {
+    let cachedInputData = {};
     testRules.forEach((testRule, key) => {
       let parsedFilterData = {};
       parseFilter(key, parsedFilterData);
@@ -361,10 +378,19 @@ describe('parser#parseFilter()', function() {
         }
       }
       for (let input of testRule.blocked) {
+        // With cached data
+        assert(matchesFilter(parsedFilterData, input, cachedInputData),
+          `${key} should block ${input}`);
+        // Without cached data
         assert(matchesFilter(parsedFilterData, input),
           `${key} should block ${input}`);
+
       }
       for (let input of testRule.notBlocked) {
+        // With cached data
+        assert(!matchesFilter(parsedFilterData, input, cachedInputData),
+          `${key} should not block ${input}`);
+        // Without cached data
         assert(!matchesFilter(parsedFilterData, input),
           `${key} should not block ${input}`);
       }

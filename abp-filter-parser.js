@@ -397,11 +397,11 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
 
   // Check for domain name anchored
   if (parsedFilterData.hostAnchored) {
-    if (!cachedInputData.host) {
-      cachedInputData.host = getUrlHost(input);
+    if (!cachedInputData.currentHost) {
+      cachedInputData.currentHost = getUrlHost(input);
     }
 
-    return !isThirdPartyHost(parsedFilterData.host, cachedInputData.host) &&
+    return !isThirdPartyHost(parsedFilterData.host, cachedInputData.currentHost) &&
       indexOfFilter(input, parsedFilterData.data) !== -1;
   }
 
@@ -428,6 +428,7 @@ const maxCached = 100;
  * @return true if the URL should be blocked
  */
 export function matches(parserData, input, contextParams = {}, cachedInputData = { }) {
+  delete cachedInputData.currentHost;
   cachedInputData.misses = cachedInputData.misses || new Set();
   cachedInputData.missList = cachedInputData.missList || [];
   if (cachedInputData.missList.length > maxCached) {
