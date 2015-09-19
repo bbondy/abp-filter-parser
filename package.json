@@ -6,7 +6,8 @@
     "test": "mocha --compilers js:babel/register",
     "lint": "eslint abp-filter-parser.js test/*.js",
     "build": "babel --modules umd abp-filter-parser.js --out-file dist/abp-filter-parser.js  --source-maps",
-    "build-jsm": "babel --modules ignore --plugins babel-jsm-plugin abp-filter-parser.js --out-file dist/abp-filter-parser.jsm --source-maps"
+    "build-jsm": "babel --modules ignore --plugins babel-jsm-plugin abp-filter-parser.js --out-file dist/abp-filter-parser.jsm --source-maps",
+    "build-common": "babel --modules common abp-filter-parser.js --out-file dist/abp-filter-parser-commonjs.js --source-maps"
   },
   "author": "Brian R. Bondy <netzen@gmail.com> (http://www.brianbondy.com)",
   "license": "MPL-2.0",
