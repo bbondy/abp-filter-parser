@@ -30,7 +30,7 @@ var fs = require('fs');
 let easyListTxt = fs.readFileSync('./test/data/easylist.txt', 'utf-8');
 let parsedFilterData = {};
 let urlToCheck = 'http://static.tumblr.com/dhqhfum/WgAn39721/cfh_header_banner_v2.jpg';
-let currentPageDomain = '/static.tumblr.com';
+let currentPageDomain = 'slashdot.org';
 
 ABPFilterParser.parse(easyListTxt, parsedFilterData);
 // ABPFilterParser.parse(someOtherListOfFilters, parsedFilterData);
