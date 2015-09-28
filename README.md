@@ -11,19 +11,19 @@ Parses filter rules as per:
 
 Babel / ES6:
 
-```
+```javascript
 import * as ABPFilterParser from 'abp-filter-parser.js';
 ```
 
 Node:
 
-```
+```javascript
 let ABPFilterParser = require('abp-filter-parser');
 ```
 
 ## Primary API:
 
-```
+```javascript
 let ABPFilterParser = require('abp-filter-parser');
 var fs = require('fs');
 
