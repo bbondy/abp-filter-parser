@@ -30,6 +30,8 @@ var fs = require('fs');
 let easyListTxt = fs.readFileSync('./test/data/easylist.txt', 'utf-8');
 let parsedFilterData = {};
 let urlToCheck = 'http://static.tumblr.com/dhqhfum/WgAn39721/cfh_header_banner_v2.jpg';
+
+// This is the site who's URLs are being checked, not the domain of the URL being checked.
 let currentPageDomain = 'slashdot.org';
 
 ABPFilterParser.parse(easyListTxt, parsedFilterData);
