@@ -1,3 +1,5 @@
+let BloomFilter = require('bloom-filter-js');
+
 /**
  * bitwise mask of different request types
  */
@@ -12,6 +14,9 @@ export const elementTypes = {
   DOCUMENT: 0o200,
   OTHER: 0o400,
 };
+
+const fingerprintSize = 7;
+let fingerprintRegex =  /([/?=a-zA-Z0-9.&_-]{7}).*\$/;
 
 /**
  * Maps element types to type mask.
@@ -109,7 +114,7 @@ export function parseHTMLFilter(input, index, parsedFilterData) {
   parsedFilterData.htmlRuleSelector = input.substring(index + 2);
 }
 
-export function parseFilter(input, parsedFilterData) {
+export function parseFilter(input, parsedFilterData, bloomFilter) {
   input = input.trim();
 
   // Check for comment or nothing
@@ -182,6 +187,12 @@ export function parseFilter(input, parsedFilterData) {
   }
 
   parsedFilterData.data = input.substring(beginIndex) || '*';
+  if (!parsedFilterData.isException) {
+    if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
+      console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
+    }
+    bloomFilter.add(getFingerprint(parsedFilterData.data));
+  }
   return true;
 }
 
@@ -192,6 +203,7 @@ export function parseFilter(input, parsedFilterData) {
  *   with the filters, exceptionFilters and htmlRuleFilters.
  */
 export function parse(input, parserData) {
+  parserData.bloomFilter = parserData.bloomFilter || new BloomFilter();
   parserData.filters = parserData.filters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
   parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
@@ -209,7 +221,7 @@ export function parse(input, parserData) {
     }
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
-    if (parseFilter(filter, parsedFilterData)) {
+    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter)) {
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
       } else if (parsedFilterData.isException) {
@@ -428,6 +440,14 @@ const maxCached = 100;
  * @return true if the URL should be blocked
  */
 export function matches(parserData, input, contextParams = {}, cachedInputData = { }) {
+  if (parserData.bloomFilter) {
+    let cleaned = input.replace(/^https?:\//, '');
+    if (!parserData.bloomFilter.substringExists(cleaned, fingerprintSize)) {
+      // console.log('early return from bloom filter!');
+      return false;
+    }
+  }
+  // console.log('not early return: ', input);
   delete cachedInputData.currentHost;
   cachedInputData.misses = cachedInputData.misses || new Set();
   cachedInputData.missList = cachedInputData.missList || [];
@@ -450,4 +470,16 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.missList.push(input);
   cachedInputData.misses.add(input);
   return false;
+}
+
+/**
+ * Obtains a fingerprint for the specified filter
+ */
+export function getFingerprint(str) {
+  // TODO: Need to find a way to get better fingerprints
+  let result = fingerprintRegex.exec(str);
+  if (result) {
+    return result[1];
+  }
+  return str.substring(0, fingerprintSize);
 }

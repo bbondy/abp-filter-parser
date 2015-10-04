@@ -23,6 +23,12 @@
   exports.parse = parse;
   exports.matchesFilter = matchesFilter;
   exports.matches = matches;
+  exports.getFingerprint = getFingerprint;
+  var BloomFilter = require('bloom-filter-js');
+
+  /**
+   * bitwise mask of different request types
+   */
   var elementTypes = {
     SCRIPT: 1,
     IMAGE: 2,
@@ -36,6 +42,12 @@
   };
 
   exports.elementTypes = elementTypes;
+  var fingerprintSize = 7;
+  var fingerprintRegex = /([/?=a-zA-Z0-9.&_-]{7}).*\$/;
+
+  /**
+   * Maps element types to type mask.
+   */
   var elementTypeMaskMap = new Map([['script', elementTypes.SCRIPT], ['image', elementTypes.IMAGE], ['stylesheet', elementTypes.STYLESHEET], ['object', elementTypes.OBJECT], ['xmlhttprequest', elementTypes.XMLHTTPREQUEST], ['object-subrequest', elementTypes.OBJECTSUBREQUEST], ['subdocument', elementTypes.SUBDOCUMENT], ['document', elementTypes.DOCUMENT], ['other', elementTypes.OTHER]]);
 
   exports.elementTypeMaskMap = elementTypeMaskMap;
@@ -88,6 +100,9 @@
     return output;
   }
 
+  /**
+   * Finds the first separator character in the input string
+   */
   function findFirstSeparatorChar(input, startPos) {
     for (var i = startPos; i < input.length; i++) {
       if (separatorCharacters.indexOf(input[i]) !== -1) {
@@ -123,7 +138,7 @@
     parsedFilterData.htmlRuleSelector = input.substring(index + 2);
   }
 
-  function parseFilter(input, parsedFilterData) {
+  function parseFilter(input, parsedFilterData, bloomFilter) {
     input = input.trim();
 
     // Check for comment or nothing
@@ -194,10 +209,24 @@
     }
 
     parsedFilterData.data = input.substring(beginIndex) || '*';
+    if (!parsedFilterData.isException) {
+      if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
+        console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
+      }
+      bloomFilter.add(getFingerprint(parsedFilterData.data));
+    }
     return true;
   }
 
+  /**
+   * Parses the set of filter rules and fills in parserData
+   * @param input filter rules
+   * @param parserData out parameter which will be filled
+   *   with the filters, exceptionFilters and htmlRuleFilters.
+   */
+
   function parse(input, parserData) {
+    parserData.bloomFilter = parserData.bloomFilter || new BloomFilter();
     parserData.filters = parserData.filters || [];
     parserData.exceptionFilters = parserData.exceptionFilters || [];
     parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
@@ -215,7 +244,7 @@
       }
       var filter = input.substring(startPos, endPos);
       var parsedFilterData = {};
-      if (parseFilter(filter, parsedFilterData)) {
+      if (parseFilter(filter, parsedFilterData, parserData.bloomFilter)) {
         if (parsedFilterData.htmlRuleSelector) {
           parserData.htmlRuleFilters.push(parsedFilterData);
         } else if (parsedFilterData.isException) {
@@ -226,9 +255,11 @@
       }
       startPos = endPos + 1;
     }
-    return parserData;
   }
 
+  /**
+   * Obtains the domain index of the input filter line
+   */
   function getDomainIndex(input) {
     var index = input.indexOf(':');
     ++index;
@@ -238,8 +269,10 @@
     return index;
   }
 
-  // Similar to str1.indexOf(filter, startingPos) but with
-  // extra consideration to some ABP filter rules like ^
+  /**
+   * Similar to str1.indexOf(filter, startingPos) but with
+   * extra consideration to some ABP filter rules like ^.
+   */
   function indexOfFilter(input, filter, startingPos) {
     if (filter.length > input.length) {
       return -1;
@@ -311,8 +344,7 @@
   // By specifying context params, you can filter out the number of rules which are
   // considered.
   function matchOptions(parsedFilterData, input) {
-    var contextParams = arguments[2] === undefined ? {} : arguments[2];
-    var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
+    var contextParams = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
 
     if (contextParams.elementTypeMask !== undefined && parsedFilterData.options) {
       if (parsedFilterData.options.elementTypeMask !== undefined && !(parsedFilterData.options.elementTypeMask & contextParams.elementTypeMask)) {
@@ -374,11 +406,15 @@
     return true;
   }
 
-  function matchesFilter(parsedFilterData, input) {
-    var contextParams = arguments[2] === undefined ? {} : arguments[2];
-    var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
+  /**
+   * Given an individual parsed filter data determines if the input url should block.
+   */
 
-    if (!matchOptions(parsedFilterData, input, contextParams, cachedInputData)) {
+  function matchesFilter(parsedFilterData, input) {
+    var contextParams = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+    var cachedInputData = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
+
+    if (!matchOptions(parsedFilterData, input, contextParams)) {
       return false;
     }
 
@@ -407,11 +443,11 @@
 
     // Check for domain name anchored
     if (parsedFilterData.hostAnchored) {
-      if (!cachedInputData.host) {
-        cachedInputData.host = getUrlHost(input);
+      if (!cachedInputData.currentHost) {
+        cachedInputData.currentHost = getUrlHost(input);
       }
 
-      return !isThirdPartyHost(parsedFilterData.host, cachedInputData.host) && indexOfFilter(input, parsedFilterData.data) !== -1;
+      return !isThirdPartyHost(parsedFilterData.host, cachedInputData.currentHost) && indexOfFilter(input, parsedFilterData.data) !== -1;
     }
 
     // Wildcard match comparison
@@ -451,10 +487,26 @@
 
   var maxCached = 100;
 
-  function matches(parserData, input) {
-    var contextParams = arguments[2] === undefined ? {} : arguments[2];
-    var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
+  /**
+   * Using the parserData rules will try to see if the input URL should be blocked or not
+   * @param parserData The filter data obtained from a call to parse
+   * @param input The input URL
+   * @return true if the URL should be blocked
+   */
 
+  function matches(parserData, input) {
+    var contextParams = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+    var cachedInputData = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
+
+    if (parserData.bloomFilter) {
+      var cleaned = input.replace(/^https?:\//, '');
+      if (!parserData.bloomFilter.substringExists(cleaned, fingerprintSize)) {
+        // console.log('early return from bloom filter!');
+        return false;
+      }
+    }
+    // console.log('not early return: ', input);
+    delete cachedInputData.currentHost;
     cachedInputData.misses = cachedInputData.misses || new Set();
     cachedInputData.missList = cachedInputData.missList || [];
     if (cachedInputData.missList.length > maxCached) {
@@ -478,6 +530,19 @@
     cachedInputData.missList.push(input);
     cachedInputData.misses.add(input);
     return false;
+  }
+
+  /**
+   * Obtains a fingerprint for the specified filter
+   */
+
+  function getFingerprint(str) {
+    // TODO: Need to find a way to get better fingerprints
+    var result = fingerprintRegex.exec(str);
+    if (result) {
+      return result[1];
+    }
+    return str.substring(0, fingerprintSize);
   }
 });
 

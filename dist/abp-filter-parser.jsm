@@ -1,9 +1,18 @@
-'use strict';
-
-this.EXPORTED_SYMBOLS = ['elementTypes', 'elementTypeMaskMap', 'parseDomains', 'parseOptions', 'parseHTMLFilter', 'parseFilter', 'parse', 'matchesFilter', 'matches'];
 /**
  * bitwise mask of different request types
  */
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+exports.parseDomains = parseDomains;
+exports.parseOptions = parseOptions;
+exports.parseHTMLFilter = parseHTMLFilter;
+exports.parseFilter = parseFilter;
+exports.parse = parse;
+exports.matchesFilter = matchesFilter;
+exports.matches = matches;
 var elementTypes = {
   SCRIPT: 1,
   IMAGE: 2,
@@ -16,17 +25,20 @@ var elementTypes = {
   OTHER: 256
 };
 
+exports.elementTypes = elementTypes;
 /**
  * Maps element types to type mask.
  */
 var elementTypeMaskMap = new Map([['script', elementTypes.SCRIPT], ['image', elementTypes.IMAGE], ['stylesheet', elementTypes.STYLESHEET], ['object', elementTypes.OBJECT], ['xmlhttprequest', elementTypes.XMLHTTPREQUEST], ['object-subrequest', elementTypes.OBJECTSUBREQUEST], ['subdocument', elementTypes.SUBDOCUMENT], ['document', elementTypes.DOCUMENT], ['other', elementTypes.OTHER]]);
 
+exports.elementTypeMaskMap = elementTypeMaskMap;
 var separatorCharacters = ':?/=^';
 
 /**
  * Parses the domain string using the passed in separator and
  * fills in options.
  */
+
 function parseDomains(input, separator, options) {
   options.domains = options.domains || [];
   options.skipDomains = options.skipDomains || [];
@@ -44,6 +56,7 @@ function parseDomains(input, separator, options) {
 /**
  * Parses options from the passed in input string
  */
+
 function parseOptions(input) {
   var output = {
     binaryOptions: new Set()
@@ -88,6 +101,7 @@ function findFirstSeparatorChar(input, startPos) {
  * @param index: Index of the first hash
  * @param parsedFilterData: The parsedFilterData object to fill
  */
+
 function parseHTMLFilter(input, index, parsedFilterData) {
   var domainsStr = input.substring(0, index);
   parsedFilterData.options = {};
@@ -185,6 +199,7 @@ function parseFilter(input, parsedFilterData) {
  * @param parserData out parameter which will be filled
  *   with the filters, exceptionFilters and htmlRuleFilters.
  */
+
 function parse(input, parserData) {
   parserData.filters = parserData.filters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
@@ -368,6 +383,7 @@ function matchOptions(parsedFilterData, input) {
 /**
  * Given an individual parsed filter data determines if the input url should block.
  */
+
 function matchesFilter(parsedFilterData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
   var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
@@ -451,6 +467,7 @@ var maxCached = 100;
  * @param input The input URL
  * @return true if the URL should be blocked
  */
+
 function matches(parserData, input) {
   var contextParams = arguments[2] === undefined ? {} : arguments[2];
   var cachedInputData = arguments[3] === undefined ? {} : arguments[3];
@@ -480,14 +497,5 @@ function matches(parserData, input) {
   cachedInputData.misses.add(input);
   return false;
 }
-this.elementTypes = elementTypes;
-this.elementTypeMaskMap = elementTypeMaskMap;
-this.parseDomains = parseDomains;
-this.parseOptions = parseOptions;
-this.parseHTMLFilter = parseHTMLFilter;
-this.parseFilter = parseFilter;
-this.parse = parse;
-this.matchesFilter = matchesFilter;
-this.matches = matches;
 
 //# sourceMappingURL=abp-filter-parser.jsm.map
