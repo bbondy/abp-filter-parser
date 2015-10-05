@@ -42,8 +42,8 @@
   };
 
   exports.elementTypes = elementTypes;
-  var fingerprintSize = 7;
-  var fingerprintRegex = /([/?=a-zA-Z0-9.&_-]{7}).*\$/;
+  var fingerprintSize = 8;
+  var fingerprintRegex = /([/?=a-zA-Z0-9.&_-]{8}).*\$/;
 
   /**
    * Maps element types to type mask.
@@ -210,9 +210,10 @@
 
     parsedFilterData.data = input.substring(beginIndex) || '*';
     if (!parsedFilterData.isException) {
-      if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
-        console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
-      }
+      // To check for duplicates
+      //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
+      //console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
+      //}
       bloomFilter.add(getFingerprint(parsedFilterData.data));
     }
     return true;
@@ -498,13 +499,23 @@
     var contextParams = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
     var cachedInputData = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
 
+    cachedInputData.bloomNegativeCount = cachedInputData.bloomNegativeCount || 0;
+    cachedInputData.bloomPositiveCount = cachedInputData.bloomPositiveCount || 0;
+    cachedInputData.notMatchCount = cachedInputData.notMatchCount || 0;
+    cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
     if (parserData.bloomFilter) {
+      console.log('walmart:', parserData.bloomFilter.exists('microsof'));
       var cleaned = input.replace(/^https?:\//, '');
       if (!parserData.bloomFilter.substringExists(cleaned, fingerprintSize)) {
-        // console.log('early return from bloom filter!');
+        cachedInputData.bloomNegativeCount++;
+        cachedInputData.notMatchCount++;
+        // console.log('early return because of bloom filter check!');
         return false;
       }
+      console.log('looked for url in bloom filter and it said yes:', cleaned);
     }
+    cachedInputData.bloomPositiveCount++;
+
     // console.log('not early return: ', input);
     delete cachedInputData.currentHost;
     cachedInputData.misses = cachedInputData.misses || new Set();
@@ -514,6 +525,8 @@
       cachedInputData.missList = cachedInputData.missList.splice(1);
     }
     if (cachedInputData.misses.has(input)) {
+      cachedInputData.notMatchCount++;
+      cachedInputData.bloomFalsePositiveCount++;
       return false;
     }
 
@@ -522,13 +535,20 @@
     })) {
       // Check for exceptions only when there's a match because matches are
       // rare compared to the volume of checks
-      return !parserData.exceptionFilters.some(function (parsedFilterData) {
+      var ret = !parserData.exceptionFilters.some(function (parsedFilterData) {
         return matchesFilter(parsedFilterData, input, contextParams, cachedInputData);
       });
+      if (!ret) {
+        cachedInputData.notMatchCount++;
+        cachedInputData.bloomFalsePositiveCount++;
+      }
+      return ret;
     }
 
     cachedInputData.missList.push(input);
     cachedInputData.misses.add(input);
+    cachedInputData.notMatchCount++;
+    cachedInputData.bloomFalsePositiveCount++;
     return false;
   }
 
