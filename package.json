@@ -28,6 +28,9 @@
   "homepage": "https://github.com/bbondy/abp-filter-parser#readme",
   "description": "",
   "dependencies": {
-    "bloom-filter-js": "0.0.7"
+    "bloom-filter-js": "0.0.8"
+  },
+  "engines": {
+    "node": "~4.1"
   }
 }
