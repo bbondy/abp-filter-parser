@@ -204,9 +204,9 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
 
   parsedFilterData.data = input.substring(beginIndex) || '*';
   // Use the host bloom filter if the filter is a host anchored filter rule with no other data
-  if (false && hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
+  if (hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
     hostBloomFilter.add(getFingerprint(parsedFilterData.host));
-    // console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data));
+    //console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data), 'host name:', parsedFilterData.host);
   } else if (bloomFilter && !parsedFilterData.isException) {
     // To check for duplicates
     //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
@@ -497,12 +497,17 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
 
-      // console.log('early return because of bloom filter check!');
-      hasMatchingNoFingerprintFilters =
-        hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData);
+      let host = getUrlHost(input);
+      // console.log('checking for host:', host);
+      if (!parserData.hostBloomFilter.substringExists(host, fingerprintSize)) {
+        // console.log('host does not exist: ', host);
+        // console.log('early return because of bloom filter check!');
+        hasMatchingNoFingerprintFilters =
+          hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData);
 
-      if (!hasMatchingNoFingerprintFilters) {
-        return false;
+        if (!hasMatchingNoFingerprintFilters) {
+          return false;
+        }
       }
     }
     // console.log('looked for url in bloom filter and it said yes:', cleaned);
@@ -524,7 +529,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   }
 
   if (hasMatchingFilters(parserData.filters, parserData, input, contextParams, cachedInputData) ||
-      hasMatchingNoFingerprintFilters === true || hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
+      hasMatchingNoFingerprintFilters === true || hasMatchingNoFingerprintFilters === undefined && hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
     if (hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
