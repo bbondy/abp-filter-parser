@@ -204,10 +204,10 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
 
   parsedFilterData.data = input.substring(beginIndex) || '*';
   // Use the host bloom filter if the filter is a host anchored filter rule with no other data
-  if (parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
+  if (false && hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
     hostBloomFilter.add(getFingerprint(parsedFilterData.host));
     // console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data));
-  } else if (!parsedFilterData.isException) {
+  } else if (bloomFilter && !parsedFilterData.isException) {
     // To check for duplicates
     //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
       // console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
@@ -229,6 +229,7 @@ export function parse(input, parserData) {
   parserData.bloomFilter = parserData.bloomFilter || new BloomFilter();
   parserData.hostBloomFilter = parserData.hostBloomFilter || new BloomFilter();
   parserData.filters = parserData.filters || [];
+  parserData.noFingerprintFilters = parserData.noFingerprintFilters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
   parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
   let startPos = 0;
@@ -246,12 +247,15 @@ export function parse(input, parserData) {
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
     if (parseFilter(filter, parsedFilterData, parserData.bloomFilter, parserData.hostBloomFilter)) {
+      let fingerprint = getFingerprint(parsedFilterData.data);
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
       } else if (parsedFilterData.isException) {
         parserData.exceptionFilters.push(parsedFilterData);
-      } else {
+      } else if (fingerprint.length > 0) {
         parserData.filters.push(parsedFilterData);
+      } else {
+        parserData.noFingerprintFilters.push(parsedFilterData);
       }
     }
     startPos = endPos + 1;
@@ -469,6 +473,11 @@ function discoverMatchingPrefix(array, bloomFilter, str, prefixLen = fingerprint
   }
 }
 
+function hasMatchingFilters(filterList, parsedFilterData, input, contextParams, cachedInputData) {
+  return filterList.some((parsedFilterData) =>
+    matchesFilter(parsedFilterData, input, contextParams, cachedInputData));
+}
+
 /**
  * Using the parserData rules will try to see if the input URL should be blocked or not
  * @param parserData The filter data obtained from a call to parse
@@ -481,13 +490,20 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.notMatchCount = cachedInputData.notMatchCount || 0;
   cachedInputData.badFingerprints = cachedInputData.badFingerprints || [];
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
+  let hasMatchingNoFingerprintFilters;
   let cleanedInput = input.replace(/^https?:\/\//, '');
   if (parserData.bloomFilter) {
     if (!parserData.bloomFilter.substringExists(cleanedInput, fingerprintSize)) {
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
+
       // console.log('early return because of bloom filter check!');
-      return false;
+      hasMatchingNoFingerprintFilters =
+        hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData);
+
+      if (!hasMatchingNoFingerprintFilters) {
+        return false;
+      }
     }
     // console.log('looked for url in bloom filter and it said yes:', cleaned);
   }
@@ -503,27 +519,23 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   }
   if (cachedInputData.misses.has(input)) {
     cachedInputData.notMatchCount++;
-    cachedInputData.bloomFalsePositiveCount++;
-    discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
     // console.log('positive match for input: ', input);
     return false;
   }
 
-  if (parserData.filters.some((parsedFilterData) =>
-    matchesFilter(parsedFilterData, input, contextParams, cachedInputData))) {
+  if (hasMatchingFilters(parserData.filters, parserData, input, contextParams, cachedInputData) ||
+      hasMatchingNoFingerprintFilters === true || hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
-    let ret = !parserData.exceptionFilters.some((parsedFilterData) =>
-      matchesFilter(parsedFilterData, input, contextParams, cachedInputData));
-    if (!ret) {
+    if (hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
-      cachedInputData.bloomFalsePositiveCount++;
-      discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
-      // console.log('positive match for input: ', input);
+      return false;
     }
-    return ret;
+    return true;
   }
 
+  // The bloom filter had a false positive, se we checked for nothing! :'(
+  // This is probably (but not always) an indication that the fingerprint selection should be tweaked!
   cachedInputData.missList.push(input);
   cachedInputData.misses.add(input);
   cachedInputData.notMatchCount++;
@@ -555,6 +567,6 @@ export function getFingerprint(str) {
   if (str.length > 8) {
     return getFingerprint(str.substring(1));
   }
-  console.warn('Warning: Could not determine a good fingerprint for:', str);
-  return str.substring(0, fingerprintSize);
+  // console.warn('Warning: Could not determine a good fingerprint for:', str);
+  return '';
 }

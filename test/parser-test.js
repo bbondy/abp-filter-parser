@@ -437,7 +437,8 @@ describe('parser#parse()', function() {
       parse(data, parserData);
       // Num lines minus (num empty lines + num comment lines)
       assert.equal(parserData.htmlRuleFilters.length, 26465);
-      assert.equal(parserData.filters.length, 18096);
+      assert.equal(parserData.filters.length, 17482);
+      assert.equal(parserData.noFingerprintFilters.length, 614);
       assert.equal(parserData.exceptionFilters.length, 2975);
       cb();
     });
@@ -454,7 +455,8 @@ describe('parser#parse()', function() {
            @@test3
            ###test3`, parserData);
     assert.equal(parserData.htmlRuleFilters.length, 3);
-    assert.equal(parserData.filters.length, 3);
+    assert.equal(parserData.filters.length, 0);
+    assert.equal(parserData.noFingerprintFilters.length, 3);
     assert.equal(parserData.exceptionFilters.length, 3);
   });
 });
