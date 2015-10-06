@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {parseFilter, parseOptions} from '../abp-filter-parser.js';
+import {parseFilter, parseOptions} from '../src/abp-filter-parser.js';
 
 // Maps option strings to [set of binary options, domains, skipDomains]
 let splitOptions = new Map([

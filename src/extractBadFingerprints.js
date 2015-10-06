@@ -13,8 +13,7 @@ function discoverMatchinPrefix(bloomFilter, str, prefixLen = 8) {
 }
 
 let sitesToCheck = [
-  'https://www.paypalobjects.com/gajs/analytics.js',
-  'https://s.ytimg.com/yts/jsbin/www-widgetapi-vflqb8CPD/www-widgetapi.js',
+  'http://www.walmart.com/canadaredirect.html',
 ];
 
 fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {

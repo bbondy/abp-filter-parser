@@ -28,7 +28,11 @@ let fingerprintRegexs = [
 let badFingerprints = ['/common/', '/google/', '/static/', 'icrosoft', 'com/stat', 'omepage/', 'cdn.com/', 'https://',
   'partner=', 'generate', 'service.', 'cript.js', 'd.min.js', 'e.min.js', 'optimize', 't.min.js', 'ing.com/', '.com/js/',
   'ala.com/', 'refresh-', 'query.js', '/widget.', 'idget.js', 'version=', 'load.php', 'scripts&', 'timg.com', 'img.com/',
-  'ytimg.co', 'objects.', 'tube.com', 'ube.com/', 'm/iframe', 'alytics.'];
+  'ytimg.co', 'objects.', 'tube.com', 'ube.com/', 'm/iframe', 'alytics.',
+  'redirect', 'edirect.', 'ect.html', '95d2-d38', 'dservice', 'ervices.', 'ces.com/', '/pagead/', 'rsion.js', 'googleta', 'ics.com/', 'storage.', '/beacon.', 'omepage_', 'callback', 'doublecl', 'leclick.', 'lick.net', 'default_', 'lacement', 's.yahoo.', 'l.yimg.c', 'yimg.com', 't/media/', 'content/', 'overlay/', '/assets/', 's/skins/', 'overlay.', '/themes/', '-loader-', 'e-min.js', 'd/select', 't-min.js', 'tracking', 's-min.js', '/header-', 'l-min.js', '/public/', 'default/', '/common_', 'plugins/', 'd/jsonp/', 'gallery-', 'd-iframe', '-iframe/', '-iframe-', 'manager/', 'osition-', 'k/widget', 'ain-min.', 'overlay-', '-curve-m', 'eloader/', '-source/', 'tooltip/', 'yahoo.js', '/search/', '/footer/', '/footer-', 'almedia/', '/traffic', '/images/', 'tic.com/',
+  'oogletag', 'oublecli', '.yimg.co','google.c','uv_I-qM8', 'oogle.co', 'ubleclic', 'ogletags', 'bleclick', 'gletagse', 'ogle.com', 'letagser', 'eclick.n', 'ame.html', 'gle.com/',
+  'etagserv', 'click.ne',
+  ];
 
 /**
  * Maps element types to type mask.
@@ -206,7 +210,7 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
   } else if (!parsedFilterData.isException) {
     // To check for duplicates
     //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
-      //console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
+      // console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
     //}
     // console.log('parse:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data));
     bloomFilter.add(getFingerprint(parsedFilterData.data));
@@ -453,6 +457,18 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
 
 const maxCached = 100;
 
+function discoverMatchingPrefix(array, bloomFilter, str, prefixLen = fingerprintSize) {
+  for (var i = 0; i < str.length - prefixLen + 1; i++) {
+    let sub = str.substring(i, i + prefixLen);
+    if (bloomFilter.exists(sub)) {
+      array.push({ badFingerprint: sub, src: str});
+      // console.log('bad-fingerprint:', sub, 'for url:', str);
+    } else {
+      // console.log('good-fingerprint:', sub, 'for url:', str);
+    }
+  }
+}
+
 /**
  * Using the parserData rules will try to see if the input URL should be blocked or not
  * @param parserData The filter data obtained from a call to parse
@@ -463,10 +479,11 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.bloomNegativeCount = cachedInputData.bloomNegativeCount || 0;
   cachedInputData.bloomPositiveCount = cachedInputData.bloomPositiveCount || 0;
   cachedInputData.notMatchCount = cachedInputData.notMatchCount || 0;
+  cachedInputData.badFingerprints = cachedInputData.badFingerprints || [];
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
+  let cleanedInput = input.replace(/^https?:\/\//, '');
   if (parserData.bloomFilter) {
-    let cleaned = input.replace(/^https?:\/\//, '');
-    if (!parserData.bloomFilter.substringExists(cleaned, fingerprintSize)) {
+    if (!parserData.bloomFilter.substringExists(cleanedInput, fingerprintSize)) {
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
       // console.log('early return because of bloom filter check!');
@@ -487,6 +504,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   if (cachedInputData.misses.has(input)) {
     cachedInputData.notMatchCount++;
     cachedInputData.bloomFalsePositiveCount++;
+    discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
     // console.log('positive match for input: ', input);
     return false;
   }
@@ -500,6 +518,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
     if (!ret) {
       cachedInputData.notMatchCount++;
       cachedInputData.bloomFalsePositiveCount++;
+      discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
       // console.log('positive match for input: ', input);
     }
     return ret;
@@ -509,6 +528,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.misses.add(input);
   cachedInputData.notMatchCount++;
   cachedInputData.bloomFalsePositiveCount++;
+  discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
   // console.log('positive match for input: ', input);
   return false;
 }
@@ -525,7 +545,7 @@ export function getFingerprint(str) {
       return result[1];
     }
     if (result) {
-      //console.log('checking again for str:', str, 'result:', result[1]);
+      // console.log('checking again for str:', str, 'result:', result[1]);
     } else {
       // console.log('checking again for str, no result');
     }

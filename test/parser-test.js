@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {parse, parseFilter, matches, matchesFilter, elementTypes} from '../abp-filter-parser.js';
+import {parse, parseFilter, matches, matchesFilter, elementTypes} from '../src/abp-filter-parser.js';
 import fs from 'fs';
 
 let testRules = new Map([

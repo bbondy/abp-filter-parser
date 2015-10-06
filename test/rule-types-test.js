@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {parseFilter} from '../abp-filter-parser.js';
+import {parseFilter} from '../src/abp-filter-parser.js';
 
 let commentRules = new Set([
    '[Adblock Plus 2.0]',
