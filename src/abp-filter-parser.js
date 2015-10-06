@@ -31,7 +31,7 @@ let badFingerprints = ['/common/', '/google/', '/static/', 'icrosoft', 'com/stat
   'ytimg.co', 'objects.', 'tube.com', 'ube.com/', 'm/iframe', 'alytics.',
   'redirect', 'edirect.', 'ect.html', '95d2-d38', 'dservice', 'ervices.', 'ces.com/', '/pagead/', 'rsion.js', 'googleta', 'ics.com/', 'storage.', '/beacon.', 'omepage_', 'callback', 'doublecl', 'leclick.', 'lick.net', 'default_', 'lacement', 's.yahoo.', 'l.yimg.c', 'yimg.com', 't/media/', 'content/', 'overlay/', '/assets/', 's/skins/', 'overlay.', '/themes/', '-loader-', 'e-min.js', 'd/select', 't-min.js', 'tracking', 's-min.js', '/header-', 'l-min.js', '/public/', 'default/', '/common_', 'plugins/', 'd/jsonp/', 'gallery-', 'd-iframe', '-iframe/', '-iframe-', 'manager/', 'osition-', 'k/widget', 'ain-min.', 'overlay-', '-curve-m', 'eloader/', '-source/', 'tooltip/', 'yahoo.js', '/search/', '/footer/', '/footer-', 'almedia/', '/traffic', '/images/', 'tic.com/',
   'oogletag', 'oublecli', '.yimg.co','google.c','uv_I-qM8', 'oogle.co', 'ubleclic', 'ogletags', 'bleclick', 'gletagse', 'ogle.com', 'letagser', 'eclick.n', 'ame.html', 'gle.com/',
-  'etagserv', 'click.ne',
+  'etagserv', 'click.ne', 'tagservi', 'googlesy', 'dication', 'ication.', 'tion.com', 'ion.com/', '/iframe.',
   ];
 
 /**
@@ -130,7 +130,7 @@ export function parseHTMLFilter(input, index, parsedFilterData) {
   parsedFilterData.htmlRuleSelector = input.substring(index + 2);
 }
 
-export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilter) {
+export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilter, exceptionBloomFilter) {
   input = input.trim();
 
   // Check for comment or nothing
@@ -204,10 +204,12 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
 
   parsedFilterData.data = input.substring(beginIndex) || '*';
   // Use the host bloom filter if the filter is a host anchored filter rule with no other data
-  if (hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
+  if (exceptionBloomFilter && parsedFilterData.isException) {
+    hostBloomFilter.add(getFingerprint(parsedFilterData.data));
+  } else if (hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
     hostBloomFilter.add(getFingerprint(parsedFilterData.host));
     //console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data), 'host name:', parsedFilterData.host);
-  } else if (bloomFilter && !parsedFilterData.isException) {
+  } else if (bloomFilter) {
     // To check for duplicates
     //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
       // console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
@@ -228,6 +230,7 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
 export function parse(input, parserData) {
   parserData.bloomFilter = parserData.bloomFilter || new BloomFilter();
   parserData.hostBloomFilter = parserData.hostBloomFilter || new BloomFilter();
+  parserData.exceptionBloomFilter = parserData.exceptionBloomFilter || new BloomFilter();
   parserData.filters = parserData.filters || [];
   parserData.noFingerprintFilters = parserData.noFingerprintFilters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
@@ -246,7 +249,7 @@ export function parse(input, parserData) {
     }
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
-    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter, parserData.hostBloomFilter)) {
+    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter, parserData.hostBloomFilter, parserData.exceptionBloomFilter)) {
       let fingerprint = getFingerprint(parsedFilterData.data);
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
@@ -532,7 +535,8 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
       hasMatchingNoFingerprintFilters === true || hasMatchingNoFingerprintFilters === undefined && hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
-    if (hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
+    let exceptionBloomFilterMiss = !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
+    if (!exceptionBloomFilterMiss || hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
       return false;
     }
