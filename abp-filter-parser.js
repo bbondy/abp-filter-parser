@@ -16,7 +16,19 @@ export const elementTypes = {
 };
 
 const fingerprintSize = 8;
-let fingerprintRegex =  /([/?=a-zA-Z0-9.&_-]{8}).*\$/;
+// Regexes used to create fingerprints
+// There's more than one because sometimes a fingerprint is determined to be a bad
+// one and would lead to a lot of collisions in the bloom filter). In those cases
+// we use the 2nd fingerprint.
+let fingerprintRegexs = [
+  /.*([./&_\-=a-zA-Z0-9]{8})\$?.*/,
+  /([./&_\-=a-zA-Z0-9]{8})\$?.*/,
+];
+
+let badFingerprints = ['/common/', '/google/', '/static/', 'icrosoft', 'com/stat', 'omepage/', 'cdn.com/', 'https://',
+  'partner=', 'generate', 'service.', 'cript.js', 'd.min.js', 'e.min.js', 'optimize', 't.min.js', 'ing.com/', '.com/js/',
+  'ala.com/', 'refresh-', 'query.js', '/widget.', 'idget.js', 'version=', 'load.php', 'scripts&', 'timg.com', 'img.com/',
+  'ytimg.co', 'objects.', 'tube.com', 'ube.com/', 'm/iframe', 'alytics.'];
 
 /**
  * Maps element types to type mask.
@@ -114,7 +126,7 @@ export function parseHTMLFilter(input, index, parsedFilterData) {
   parsedFilterData.htmlRuleSelector = input.substring(index + 2);
 }
 
-export function parseFilter(input, parsedFilterData, bloomFilter) {
+export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilter) {
   input = input.trim();
 
   // Check for comment or nothing
@@ -187,13 +199,19 @@ export function parseFilter(input, parsedFilterData, bloomFilter) {
   }
 
   parsedFilterData.data = input.substring(beginIndex) || '*';
-  if (!parsedFilterData.isException) {
+  // Use the host bloom filter if the filter is a host anchored filter rule with no other data
+  if (parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
+    hostBloomFilter.add(getFingerprint(parsedFilterData.host));
+    // console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data));
+  } else if (!parsedFilterData.isException) {
     // To check for duplicates
     //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
       //console.log('duplicate found for data: ' + getFingerprint(parsedFilterData.data));
     //}
+    // console.log('parse:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data));
     bloomFilter.add(getFingerprint(parsedFilterData.data));
   }
+
   return true;
 }
 
@@ -205,6 +223,7 @@ export function parseFilter(input, parsedFilterData, bloomFilter) {
  */
 export function parse(input, parserData) {
   parserData.bloomFilter = parserData.bloomFilter || new BloomFilter();
+  parserData.hostBloomFilter = parserData.hostBloomFilter || new BloomFilter();
   parserData.filters = parserData.filters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
   parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
@@ -222,7 +241,7 @@ export function parse(input, parserData) {
     }
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
-    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter)) {
+    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter, parserData.hostBloomFilter)) {
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
       } else if (parsedFilterData.isException) {
@@ -468,6 +487,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   if (cachedInputData.misses.has(input)) {
     cachedInputData.notMatchCount++;
     cachedInputData.bloomFalsePositiveCount++;
+    // console.log('positive match for input: ', input);
     return false;
   }
 
@@ -480,6 +500,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
     if (!ret) {
       cachedInputData.notMatchCount++;
       cachedInputData.bloomFalsePositiveCount++;
+      // console.log('positive match for input: ', input);
     }
     return ret;
   }
@@ -488,6 +509,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.misses.add(input);
   cachedInputData.notMatchCount++;
   cachedInputData.bloomFalsePositiveCount++;
+  // console.log('positive match for input: ', input);
   return false;
 }
 
@@ -495,10 +517,24 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
  * Obtains a fingerprint for the specified filter
  */
 export function getFingerprint(str) {
-  // TODO: Need to find a way to get better fingerprints
-  let result = fingerprintRegex.exec(str);
-  if (result) {
-    return result[1];
+  for (var i = 0; i < fingerprintRegexs.length; i++) {
+    let fingerprintRegex = fingerprintRegexs[i];
+    let result = fingerprintRegex.exec(str);
+    fingerprintRegex.lastIndex = 0;
+    if (result && !badFingerprints.includes(result[1])) {
+      return result[1];
+    }
+    if (result) {
+      //console.log('checking again for str:', str, 'result:', result[1]);
+    } else {
+      // console.log('checking again for str, no result');
+    }
   }
+  // This is pretty ugly but getting fingerprints is assumed to be used only when preprocessing and
+  // in a live environment.
+  if (str.length > 8) {
+    return getFingerprint(str.substring(1));
+  }
+  console.warn('Warning: Could not determine a good fingerprint for:', str);
   return str.substring(0, fingerprintSize);
 }
