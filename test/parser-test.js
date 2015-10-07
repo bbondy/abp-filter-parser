@@ -437,8 +437,7 @@ describe('parser#parse()', function() {
       parse(data, parserData);
       // Num lines minus (num empty lines + num comment lines)
       assert.equal(parserData.htmlRuleFilters.length, 26465);
-      assert.equal(parserData.filters.length, 17482);
-      assert.equal(parserData.noFingerprintFilters.length, 614);
+      assert.equal(parserData.filters.length + parserData.noFingerprintFilters.length, 18096);
       assert.equal(parserData.exceptionFilters.length, 2975);
       cb();
     });

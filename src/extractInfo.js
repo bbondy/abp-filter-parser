@@ -2,7 +2,7 @@ import {parse, getFingerprint} from './abp-filter-parser.js';
 import fs from 'fs';
 let BloomFilter = require('bloom-filter-js');
 
-function discoverMatchinPrefix(bloomFilter, str, prefixLen = 8) {
+function discoverMatchingPrefix(bloomFilter, str, prefixLen = 8) {
   for (var i = 0; i < str.length - prefixLen + 1; i++) {
     let sub = str.substring(i, i + prefixLen);
     let cleaned = sub.replace(/^https?:\/\//, '');
@@ -24,14 +24,17 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
   let parserData = {};
   parse(data, parserData);
 
+  // Write out the bloom filter data files
+  fs.writeFileSync('bloomFilterData', new Buffer(new Uint8Array(parserData.bloomFilter.toJSON())));
+  fs.writeFileSync('hostBloomFilterData', new Buffer(new Uint8Array(parserData.hostBloomFilter.toJSON())));
+  fs.writeFileSync('exceptionBloomFilterData', new Buffer(new Uint8Array(parserData.exceptionBloomFilter.toJSON())));
+
   //console.log('Number of filters processed: ', parserData.filterCount);
-  let bloomFilterData = new Uint8Array(parserData.bloomFilter.toJSON());
-  fs.writeFileSync('bloomData', new Buffer(bloomFilterData));
 
   let readData = new Uint8Array(fs.readFileSync('bloomData'));
   let bloomFilter2 = new BloomFilter();
 
   console.log('-------');
   sitesToCheck.forEach(s =>
-    discoverMatchinPrefix(parserData.bloomFilter, s));
+    discoverMatchingPrefix(parserData.bloomFilter, s));
 });
