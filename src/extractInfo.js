@@ -31,10 +31,14 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
 
   //console.log('Number of filters processed: ', parserData.filterCount);
 
-  let readData = new Uint8Array(fs.readFileSync('bloomData'));
-  let bloomFilter2 = new BloomFilter();
-
   console.log('-------');
   sitesToCheck.forEach(s =>
     discoverMatchingPrefix(parserData.bloomFilter, s));
+
+  // WRite out the POD cached filter data JSM
+  delete parserData.bloomFilter;
+  delete parserData.hostBloomFilter;
+  delete parserData.exceptionBloomFilter;
+  let cachedFilterDataJSM = 'dump("######Loaded cached-rules.jsm\\n");\nthis.EXPORTED_SYMBOLS = ["parserData"];\nthis.parserData = ' + JSON.stringify(parserData) + ';\n';
+  fs.writeFileSync('cachedFilterData.jsm', cachedFilterDataJSM);
 });

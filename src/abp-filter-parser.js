@@ -1,4 +1,4 @@
-let BloomFilter = require('bloom-filter-js');
+import * as BloomFilterJS from 'bloom-filter-js';
 import badFingerprints from './badFingerprints.js';
 
 /**
@@ -220,9 +220,9 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
  *   with the filters, exceptionFilters and htmlRuleFilters.
  */
 export function parse(input, parserData) {
-  parserData.bloomFilter = parserData.bloomFilter || new BloomFilter();
-  parserData.hostBloomFilter = parserData.hostBloomFilter || new BloomFilter();
-  parserData.exceptionBloomFilter = parserData.exceptionBloomFilter || new BloomFilter();
+  parserData.bloomFilter = parserData.bloomFilter || new BloomFilterJS.BloomFilter();
+  parserData.hostBloomFilter = parserData.hostBloomFilter || new BloomFilterJS.BloomFilter();
+  parserData.exceptionBloomFilter = parserData.exceptionBloomFilter || new BloomFilterJS.BloomFilter();
   parserData.filters = parserData.filters || [];
   parserData.noFingerprintFilters = parserData.noFingerprintFilters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
