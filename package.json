@@ -5,7 +5,7 @@
   "scripts": {
     "test": "mocha --compilers js:babel/register",
     "lint": "eslint src/*.js test/*.js",
-    "build": "babel --modules umd src/abp-filter-parser.js --out-dir dist --source-maps",
+    "build": "babel --modules umd src/*.js --out-dir dist --source-maps",
     "build-jsm": "babel --modules ignore --plugins babel-jsm-plugin src/abp-filter-parser.js --out-file dist/abp-filter-parser.jsm --source-maps",
     "build-common": "babel --modules common src/abp-filter-parser.js --out-file dist/abp-filter-parser-commonjs.js --source-maps"
   },

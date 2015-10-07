@@ -1,4 +1,5 @@
 let BloomFilter = require('bloom-filter-js');
+import badFingerprints from './badFingerprints.js';
 
 /**
  * bitwise mask of different request types
@@ -24,15 +25,6 @@ let fingerprintRegexs = [
   /.*([./&_\-=a-zA-Z0-9]{8})\$?.*/,
   /([./&_\-=a-zA-Z0-9]{8})\$?.*/,
 ];
-
-let badFingerprints = ['/common/', '/google/', '/static/', 'icrosoft', 'com/stat', 'omepage/', 'cdn.com/', 'https://',
-  'partner=', 'generate', 'service.', 'cript.js', 'd.min.js', 'e.min.js', 'optimize', 't.min.js', 'ing.com/', '.com/js/',
-  'ala.com/', 'refresh-', 'query.js', '/widget.', 'idget.js', 'version=', 'load.php', 'scripts&', 'timg.com', 'img.com/',
-  'ytimg.co', 'objects.', 'tube.com', 'ube.com/', 'm/iframe', 'alytics.',
-  'redirect', 'edirect.', 'ect.html', '95d2-d38', 'dservice', 'ervices.', 'ces.com/', '/pagead/', 'rsion.js', 'googleta', 'ics.com/', 'storage.', '/beacon.', 'omepage_', 'callback', 'doublecl', 'leclick.', 'lick.net', 'default_', 'lacement', 's.yahoo.', 'l.yimg.c', 'yimg.com', 't/media/', 'content/', 'overlay/', '/assets/', 's/skins/', 'overlay.', '/themes/', '-loader-', 'e-min.js', 'd/select', 't-min.js', 'tracking', 's-min.js', '/header-', 'l-min.js', '/public/', 'default/', '/common_', 'plugins/', 'd/jsonp/', 'gallery-', 'd-iframe', '-iframe/', '-iframe-', 'manager/', 'osition-', 'k/widget', 'ain-min.', 'overlay-', '-curve-m', 'eloader/', '-source/', 'tooltip/', 'yahoo.js', '/search/', '/footer/', '/footer-', 'almedia/', '/traffic', '/images/', 'tic.com/',
-  'oogletag', 'oublecli', '.yimg.co','google.c','uv_I-qM8', 'oogle.co', 'ubleclic', 'ogletags', 'bleclick', 'gletagse', 'ogle.com', 'letagser', 'eclick.n', 'ame.html', 'gle.com/',
-  'etagserv', 'click.ne', 'tagservi', 'googlesy', 'dication', 'ication.', 'tion.com', 'ion.com/', '/iframe.',
-  ];
 
 /**
  * Maps element types to type mask.
