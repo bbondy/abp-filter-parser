@@ -1,6 +1,5 @@
 import {parse, getFingerprint} from './abp-filter-parser.js';
 import fs from 'fs';
-let BloomFilter = require('bloom-filter-js');
 
 function discoverMatchingPrefix(bloomFilter, str, prefixLen = 8) {
   for (var i = 0; i < str.length - prefixLen + 1; i++) {
@@ -13,7 +12,7 @@ function discoverMatchingPrefix(bloomFilter, str, prefixLen = 8) {
 }
 
 let sitesToCheck = [
-  'http://www.walmart.com/canadaredirect.html',
+  'http://static.digg.com/static/fe/229ff0/images/reader/top-setting@2x.png'
 ];
 
 fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {

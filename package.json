@@ -1,6 +1,6 @@
 {
   "name": "abp-filter-parser",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "main": "dist/src/abp-filter-parser.js",
   "scripts": {
     "test": "mocha --compilers js:babel/register",
@@ -29,7 +29,7 @@
   "homepage": "https://github.com/bbondy/abp-filter-parser#readme",
   "description": "",
   "dependencies": {
-    "bloom-filter-js": "0.0.8"
+    "bloom-filter-js": "0.0.11"
   },
   "engines": {
     "node": "~4.1"
