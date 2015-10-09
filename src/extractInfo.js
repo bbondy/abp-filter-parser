@@ -1,7 +1,11 @@
 import {parse, getFingerprint} from './abp-filter-parser.js';
 import fs from 'fs';
+import {BloomFilter} from 'bloom-filter-js';
 
 function discoverMatchingPrefix(bloomFilter, str, prefixLen = 8) {
+  if (!bloomFilter.substringExists(str, prefixLen)) {
+    console.log('no substring exists for url:', str);
+  }
   for (var i = 0; i < str.length - prefixLen + 1; i++) {
     let sub = str.substring(i, i + prefixLen);
     let cleaned = sub.replace(/^https?:\/\//, '');
@@ -12,7 +16,7 @@ function discoverMatchingPrefix(bloomFilter, str, prefixLen = 8) {
 }
 
 let sitesToCheck = [
-  'http://static.digg.com/static/fe/229ff0/images/reader/top-setting@2x.png'
+  'http://c.s-microsoft.com/en-ca/CMSImages/store_symbol.png?version=e2eecca5-4550-10c6-57b1-5114804a4c01',
 ];
 
 fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
@@ -28,11 +32,17 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
   fs.writeFileSync('hostBloomFilterData', new Buffer(new Uint8Array(parserData.hostBloomFilter.toJSON())));
   fs.writeFileSync('exceptionBloomFilterData', new Buffer(new Uint8Array(parserData.exceptionBloomFilter.toJSON())));
 
+  let readData = fs.readFileSync('./bloomFilterData');
+  let bloomData = new BloomFilter(new Uint8Array(readData));
+  console.log(bloomData);
+  let bloomFilter = new BloomFilter(bloomData);
+
   //console.log('Number of filters processed: ', parserData.filterCount);
+
 
   console.log('-------');
   sitesToCheck.forEach(s =>
-    discoverMatchingPrefix(parserData.bloomFilter, s));
+    discoverMatchingPrefix(bloomFilter/*parserData.bloomFilter*/, s));
 
   // WRite out the POD cached filter data JSM
   delete parserData.bloomFilter;
