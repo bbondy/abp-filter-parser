@@ -487,7 +487,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
   let cleanedInput = input.replace(/^https?:\/\//, '');
-  if (parserData.bloomFilter) {
+  if (parserData.bloomFilter && parserData.hostBloomFilter) {
     if (!parserData.bloomFilter.substringExists(cleanedInput, fingerprintSize)) {
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
@@ -527,7 +527,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
       hasMatchingNoFingerprintFilters === true || hasMatchingNoFingerprintFilters === undefined && hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
-    let exceptionBloomFilterMiss = !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
+    let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
     if (!exceptionBloomFilterMiss || hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
       return false;
