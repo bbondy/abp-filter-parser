@@ -197,7 +197,7 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
   parsedFilterData.data = input.substring(beginIndex) || '*';
   // Use the host bloom filter if the filter is a host anchored filter rule with no other data
   if (exceptionBloomFilter && parsedFilterData.isException) {
-    hostBloomFilter.add(getFingerprint(parsedFilterData.data));
+    exceptionBloomFilter.add(getFingerprint(parsedFilterData.data));
   } else if (hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
     hostBloomFilter.add(getFingerprint(parsedFilterData.host));
     //console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data), 'host name:', parsedFilterData.host);
