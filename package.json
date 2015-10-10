@@ -1,6 +1,6 @@
 {
   "name": "abp-filter-parser",
-  "version": "0.1.19",
+  "version": "0.2.0",
   "main": "dist/src/abp-filter-parser.js",
   "scripts": {
     "test": "mocha --compilers js:babel/register",
