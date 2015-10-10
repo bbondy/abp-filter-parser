@@ -1,6 +1,6 @@
 {
   "name": "abp-filter-parser",
-  "version": "0.1.16",
+  "version": "0.1.19",
   "main": "dist/src/abp-filter-parser.js",
   "scripts": {
     "test": "mocha --compilers js:babel/register",
@@ -8,7 +8,8 @@
     "build": "babel --modules umd src/*.js --out-dir dist --source-maps",
     "build-jsm": "babel --modules ignore --plugins babel-jsm-plugin src --out-dir dist --source-maps",
     "build-common": "babel --modules common src/abp-filter-parser.js --out-file dist/abp-filter-parser-commonjs.js --source-maps",
-    "extract": "babel-node src/extractInfo.js"
+    "extract": "babel-node src/extractInfo.js",
+    "prepublish": "npm run build"
   },
   "author": "Brian R. Bondy <netzen@gmail.com> (http://www.brianbondy.com)",
   "license": "MPL-2.0",
