@@ -471,8 +471,8 @@ function discoverMatchingPrefix(array, bloomFilter, str, prefixLen = fingerprint
 }
 
 function hasMatchingFilters(filterList, parsedFilterData, input, contextParams, cachedInputData) {
-  return filterList.some((parsedFilterData) =>
-    matchesFilter(parsedFilterData, input, contextParams, cachedInputData));
+  return filterList.some(parsedFilterData2 =>
+    matchesFilter(parsedFilterData2, input, contextParams, cachedInputData));
 }
 
 /**

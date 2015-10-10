@@ -34,10 +34,6 @@
       2,
       "allow-null"
     ],
-    "global-strict": [
-      2,
-      "never"
-    ],
     "guard-for-in": 0,
     "max-len": [
       2,
