@@ -31,10 +31,10 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
   parse(data, parserData);
 
   // Write out the bloom filter data files
-  fs.writeFileSync('bloomFilterData', new Buffer(new Uint8Array(parserData.bloomFilter.toJSON())));
-  fs.writeFileSync('exceptionBloomFilterData', new Buffer(new Uint8Array(parserData.exceptionBloomFilter.toJSON())));
+  fs.writeFileSync('dist/bloomFilterData', new Buffer(new Uint8Array(parserData.bloomFilter.toJSON())));
+  fs.writeFileSync('dist/exceptionBloomFilterData', new Buffer(new Uint8Array(parserData.exceptionBloomFilter.toJSON())));
 
-  let readData = fs.readFileSync('./bloomFilterData');
+  let readData = fs.readFileSync('./dist/bloomFilterData');
   let bloomData = new BloomFilter(new Uint8Array(readData));
   console.log(bloomData);
   let bloomFilter = new BloomFilter(bloomData);
