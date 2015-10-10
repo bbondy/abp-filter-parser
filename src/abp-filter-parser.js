@@ -1,5 +1,5 @@
 import * as BloomFilterJS from 'bloom-filter-js';
-import badFingerprints from './badFingerprints.js';
+import {badFingerprints, badSubstrings} from './badFingerprints.js';
 
 /**
  * bitwise mask of different request types
@@ -16,7 +16,15 @@ export const elementTypes = {
   OTHER: 0o400,
 };
 
+// Maximum number of cached entries to keep for subsequent lookups
+const maxCached = 100;
+
+// Maximum number of URL chars to check in match clauses
+const maxUrlChars = 100;
+
+// Exact size for fingerprints, if you change also change fingerprintRegexs
 const fingerprintSize = 8;
+
 // Regexes used to create fingerprints
 // There's more than one because sometimes a fingerprint is determined to be a bad
 // one and would lead to a lot of collisions in the bloom filter). In those cases
@@ -122,7 +130,7 @@ export function parseHTMLFilter(input, index, parsedFilterData) {
   parsedFilterData.htmlRuleSelector = input.substring(index + 2);
 }
 
-export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilter, exceptionBloomFilter) {
+export function parseFilter(input, parsedFilterData, bloomFilter, exceptionBloomFilter) {
   input = input.trim();
 
   // Check for comment or nothing
@@ -198,9 +206,6 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
   // Use the host bloom filter if the filter is a host anchored filter rule with no other data
   if (exceptionBloomFilter && parsedFilterData.isException) {
     exceptionBloomFilter.add(getFingerprint(parsedFilterData.data));
-  } else if (hostBloomFilter && parsedFilterData.hostAnchored && parsedFilterData.host.length + 1 >= parsedFilterData.data.length) {
-    hostBloomFilter.add(getFingerprint(parsedFilterData.host));
-    //console.log('hostparse:', parsedFilterData.data, 'data is:', parsedFilterData.data, 'fingerprint:', getFingerprint(parsedFilterData.data), 'host name:', parsedFilterData.host);
   } else if (bloomFilter) {
     // To check for duplicates
     //if (bloomFilter.exists(getFingerprint(parsedFilterData.data))) {
@@ -221,7 +226,6 @@ export function parseFilter(input, parsedFilterData, bloomFilter, hostBloomFilte
  */
 export function parse(input, parserData) {
   parserData.bloomFilter = parserData.bloomFilter || new BloomFilterJS.BloomFilter();
-  parserData.hostBloomFilter = parserData.hostBloomFilter || new BloomFilterJS.BloomFilter();
   parserData.exceptionBloomFilter = parserData.exceptionBloomFilter || new BloomFilterJS.BloomFilter();
   parserData.filters = parserData.filters || [];
   parserData.noFingerprintFilters = parserData.noFingerprintFilters || [];
@@ -241,7 +245,7 @@ export function parse(input, parserData) {
     }
     let filter = input.substring(startPos, endPos);
     let parsedFilterData = {};
-    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter, parserData.hostBloomFilter, parserData.exceptionBloomFilter)) {
+    if (parseFilter(filter, parsedFilterData, parserData.bloomFilter, parserData.exceptionBloomFilter)) {
       let fingerprint = getFingerprint(parsedFilterData.data);
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
@@ -454,8 +458,6 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
   return true;
 }
 
-const maxCached = 100;
-
 function discoverMatchingPrefix(array, bloomFilter, str, prefixLen = fingerprintSize) {
   for (var i = 0; i < str.length - prefixLen + 1; i++) {
     let sub = str.substring(i, i + prefixLen);
@@ -487,22 +489,19 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
   let cleanedInput = input.replace(/^https?:\/\//, '');
-  if (parserData.bloomFilter && parserData.hostBloomFilter) {
+  if (cleanedInput.length > maxUrlChars) {
+    cleanedInput = cleanedInput.substring(0, maxUrlChars);
+  }
+  if (parserData.bloomFilter) {
     if (!parserData.bloomFilter.substringExists(cleanedInput, fingerprintSize)) {
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
+      // console.log('early return because of bloom filter check!');
+      hasMatchingNoFingerprintFilters =
+        hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData);
 
-      let host = getUrlHost(input);
-      // console.log('checking for host:', host);
-      if (!parserData.hostBloomFilter.substringExists(host, fingerprintSize)) {
-        // console.log('host does not exist: ', host);
-        // console.log('early return because of bloom filter check!');
-        hasMatchingNoFingerprintFilters =
-          hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData);
-
-        if (!hasMatchingNoFingerprintFilters) {
-          return false;
-        }
+      if (!hasMatchingNoFingerprintFilters) {
+        return false;
       }
     }
     // console.log('looked for url in bloom filter and it said yes:', cleaned);
@@ -524,7 +523,8 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   }
 
   if (hasMatchingFilters(parserData.filters, parserData, input, contextParams, cachedInputData) ||
-      hasMatchingNoFingerprintFilters === true || hasMatchingNoFingerprintFilters === undefined && hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
+      hasMatchingNoFingerprintFilters === true || hasMatchingNoFingerprintFilters === undefined &&
+      hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
     let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
@@ -554,7 +554,10 @@ export function getFingerprint(str) {
     let fingerprintRegex = fingerprintRegexs[i];
     let result = fingerprintRegex.exec(str);
     fingerprintRegex.lastIndex = 0;
-    if (result && !badFingerprints.includes(result[1])) {
+
+    if (result &&
+        !badFingerprints.includes(result[1]) &&
+        !badSubstrings.find(badSubstring => result[1].includes(badSubstring))) {
       return result[1];
     }
     if (result) {
@@ -566,7 +569,8 @@ export function getFingerprint(str) {
   // This is pretty ugly but getting fingerprints is assumed to be used only when preprocessing and
   // in a live environment.
   if (str.length > 8) {
-    return getFingerprint(str.substring(1));
+    // Remove first and last char
+    return getFingerprint(str.slice(1, -1));
   }
   // console.warn('Warning: Could not determine a good fingerprint for:', str);
   return '';

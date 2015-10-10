@@ -2,6 +2,9 @@ import {parse, getFingerprint} from './abp-filter-parser.js';
 import fs from 'fs';
 import {BloomFilter} from 'bloom-filter-js';
 
+console.log(getFingerprint('oauth.googleusercontent.com/gadgets/js/core:rpc:shindig.random:shindig.sha1.js?c=2'));
+
+
 function discoverMatchingPrefix(bloomFilter, str, prefixLen = 8) {
   if (!bloomFilter.substringExists(str, prefixLen)) {
     console.log('no substring exists for url:', str);
@@ -29,7 +32,6 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
 
   // Write out the bloom filter data files
   fs.writeFileSync('bloomFilterData', new Buffer(new Uint8Array(parserData.bloomFilter.toJSON())));
-  fs.writeFileSync('hostBloomFilterData', new Buffer(new Uint8Array(parserData.hostBloomFilter.toJSON())));
   fs.writeFileSync('exceptionBloomFilterData', new Buffer(new Uint8Array(parserData.exceptionBloomFilter.toJSON())));
 
   let readData = fs.readFileSync('./bloomFilterData');
@@ -46,7 +48,6 @@ fs.readFile('./test/data/easylist.txt', 'utf8', function (err,data) {
 
   // WRite out the POD cached filter data JSM
   delete parserData.bloomFilter;
-  delete parserData.hostBloomFilter;
   delete parserData.exceptionBloomFilter;
   let cachedFilterDataJSM = 'dump("######Loaded cached-rules.jsm\\n");\nthis.EXPORTED_SYMBOLS = ["parserData"];\nthis.parserData = ' + JSON.stringify(parserData) + ';\n';
   fs.writeFileSync('cachedFilterData.jsm', cachedFilterDataJSM);
