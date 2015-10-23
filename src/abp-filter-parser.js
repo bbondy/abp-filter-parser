@@ -132,6 +132,7 @@ export function parseHTMLFilter(input, index, parsedFilterData) {
 
 export function parseFilter(input, parsedFilterData, bloomFilter, exceptionBloomFilter) {
   input = input.trim();
+  parsedFilterData.rawFilter = input;
 
   // Check for comment or nothing
   if (input.length === 0) {
@@ -471,8 +472,12 @@ function discoverMatchingPrefix(array, bloomFilter, str, prefixLen = fingerprint
 }
 
 function hasMatchingFilters(filterList, parsedFilterData, input, contextParams, cachedInputData) {
-  return filterList.some(parsedFilterData2 =>
+  const foundFilter = filterList.find(parsedFilterData2 =>
     matchesFilter(parsedFilterData2, input, contextParams, cachedInputData));
+  if (foundFilter && cachedInputData.matchedFilters && foundFilter.rawFilter) {
+    cachedInputData.matchedFilters.push(foundFilter.rawFilter);
+  }
+  return !!foundFilter;
 }
 
 /**
@@ -486,6 +491,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.bloomPositiveCount = cachedInputData.bloomPositiveCount || 0;
   cachedInputData.notMatchCount = cachedInputData.notMatchCount || 0;
   cachedInputData.badFingerprints = cachedInputData.badFingerprints || [];
+  cachedInputData.matchedFilters = cachedInputData.matchedFilters || [];
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
   let cleanedInput = input.replace(/^https?:\/\//, '');
