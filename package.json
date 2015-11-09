@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "main": "dist/src/abp-filter-parser.js",
   "scripts": {
-    "test": "mocha --compilers js:babel/register",
+    "test": "mocha --compilers js:babel-core/register",
     "lint": "eslint src/abp-filter-parser.js src/extractInfo.js test/*.js",
     "build": "babel --modules umd src/*.js --out-dir dist --source-maps",
     "build-jsm": "babel --modules ignore --plugins babel-jsm-plugin src --out-dir dist --source-maps",
@@ -15,8 +15,13 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "babel": "^5.8.23",
+    "babel-cli": "^6.1.2",
+    "babel-core": "^6.1.2",
     "babel-eslint": "^4.1.3",
     "babel-jsm-plugin": "^1.0.2",
+    "babel-polyfill": "^6.0.16",
+    "babel-preset-es2015": "^6.1.2",
+    "babel-preset-stage-2": "^6.1.2",
     "eslint": "^1.6.0",
     "mocha": "^2.3.3"
   },
@@ -33,6 +38,6 @@
     "bloom-filter-js": "0.0.11"
   },
   "engines": {
-    "node": "~4.1"
+    "node": "~5.0"
   }
 }

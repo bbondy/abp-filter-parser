@@ -429,6 +429,7 @@ describe('parser#parseFilter()', function() {
 
 describe('parser#parse()', function() {
   it('should parse EasyList without failing', function(cb) {
+    this.timeout(5000);
     fs.readFile('./test/data/easylist.txt', 'utf8', function (err, data) {
       if (err) {
         return console.log(err);
