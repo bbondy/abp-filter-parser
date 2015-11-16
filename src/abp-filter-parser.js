@@ -1,6 +1,8 @@
 import * as BloomFilterJS from 'bloom-filter-js';
 import {badFingerprints, badSubstrings} from './badFingerprints.js';
 
+let fs = require('fs')
+
 /**
  * bitwise mask of different request types
  */
@@ -475,7 +477,17 @@ function hasMatchingFilters(filterList, parsedFilterData, input, contextParams, 
   const foundFilter = filterList.find(parsedFilterData2 =>
     matchesFilter(parsedFilterData2, input, contextParams, cachedInputData));
   if (foundFilter && cachedInputData.matchedFilters && foundFilter.rawFilter) {
-    cachedInputData.matchedFilters.push(foundFilter.rawFilter);
+
+    // increment the count of matches
+    // we store an extra object and a count so that in the future
+    // other bits of information can be recorded during match time
+    if (cachedInputData.matchedFilters[foundFilter.rawFilter]) {
+      cachedInputData.matchedFilters[foundFilter.rawFilter].matches += 1
+    } else {
+      cachedInputData.matchedFilters[foundFilter.rawFilter]  = { matches: 1 }
+    }
+
+    fs.writeFileSync('easylist-matches.json', JSON.stringify(cachedInputData.matchedFilters), 'utf-8');
   }
   return !!foundFilter;
 }
@@ -491,7 +503,8 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.bloomPositiveCount = cachedInputData.bloomPositiveCount || 0;
   cachedInputData.notMatchCount = cachedInputData.notMatchCount || 0;
   cachedInputData.badFingerprints = cachedInputData.badFingerprints || [];
-  cachedInputData.matchedFilters = cachedInputData.matchedFilters || [];
+  cachedInputData.matchedFilters = cachedInputData.matchedFilters || {};
+
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
   let cleanedInput = input.replace(/^https?:\/\//, '');
