@@ -1,6 +1,6 @@
 {
   "name": "abp-filter-parser",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/src/abp-filter-parser.js",
   "scripts": {
     "test": "mocha --compilers js:babel-core/register",
@@ -14,7 +14,6 @@
   "author": "Brian R. Bondy <netzen@gmail.com> (http://www.brianbondy.com)",
   "license": "MPL-2.0",
   "devDependencies": {
-    "babel": "^5.8.23",
     "babel-cli": "^6.1.2",
     "babel-core": "^6.1.2",
     "babel-eslint": "^4.1.3",
