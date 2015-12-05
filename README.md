@@ -1,4 +1,7 @@
 # abp-filter-parser
+
+For a faster more precise version of this library, see its [C++ gyp rewrite](https://github.com/bbondy/abp-filter-parser-cpp).
+
 JavaScript Adblock Plus filter parser for lists like EasyList
 
 [![Build Status](https://travis-ci.org/bbondy/abp-filter-parser.svg?branch=master)](https://travis-ci.org/bbondy/abp-filter-parser)
