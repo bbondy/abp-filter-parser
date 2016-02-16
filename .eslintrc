@@ -47,7 +47,7 @@
       2,
       "except-parens"
     ],
-    "space-after-keywords": 2,
+    "keyword-spacing": 2,
     "no-debugger": 2,
     "no-empty": 2,
     "no-eval": 2,
