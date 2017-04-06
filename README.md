@@ -52,7 +52,7 @@ if (ABPFilterParser.matches(parsedFilterData, urlToCheck, {
 
 ## Secondary APIs
 
-You probably won't need these directly, they are used by the parimary API above.
+You probably won't need these directly, they are used by the primary API above.
 
 - parseDomains
 - parseOptions
