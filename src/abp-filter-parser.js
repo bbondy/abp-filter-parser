@@ -444,6 +444,13 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
     return false;
   }
 
+  // For HTML rule selector filters, consider them as matches as long as the
+  // filter options match. This allows us to use this function, for example,
+  // to check whether an HTML rule selector filter applies to a domain or not
+  if (parsedFilterData.htmlRuleSelector) {
+    return true;
+  }
+
   // Check for a regex match
   if (parsedFilterData.isRegex) {
     if (!parsedFilterData.regex) {
@@ -577,7 +584,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
     let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
-    if (!exceptionBloomFilterMiss || hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
+    if (!exceptionBloomFilterMiss && hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
       return false;
     }
