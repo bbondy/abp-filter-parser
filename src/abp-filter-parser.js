@@ -21,6 +21,9 @@ export const elementTypes = {
 // Maximum number of cached entries to keep for subsequent lookups
 const maxCached = 100;
 
+// Maximum number of URL chars to check in match clauses
+const maxUrlChars = 100;
+
 // Exact size for fingerprints, if you change also change fingerprintRegexs
 const fingerprintSize = 8;
 
@@ -548,8 +551,12 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
 
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
+  let cleanedInput = input;
+  if (cleanedInput.length > maxUrlChars) {
+    cleanedInput = cleanedInput.substring(0, maxUrlChars);
+  }
   if (parserData.bloomFilter) {
-    if (!parserData.bloomFilter.substringExists(input, fingerprintSize)) {
+    if (!parserData.bloomFilter.substringExists(cleanedInput, fingerprintSize)) {
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
       // console.log('early return because of bloom filter check!');
@@ -583,14 +590,12 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
       hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
-    let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(input, fingerprintSize);
+    let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
     if (!exceptionBloomFilterMiss && hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData) ||
         hasMatchingFilters(parserData.noFingerprintExceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
-      console.log('==FALSE');
       return false;
     }
-    console.log('==TRUE');
     return true;
   }
 
@@ -600,7 +605,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.misses.add(input);
   cachedInputData.notMatchCount++;
   cachedInputData.bloomFalsePositiveCount++;
-  discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, input);
+  discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
   // console.log('positive match for input: ', input);
   return false;
 }
