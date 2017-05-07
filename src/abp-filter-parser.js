@@ -21,9 +21,6 @@ export const elementTypes = {
 // Maximum number of cached entries to keep for subsequent lookups
 const maxCached = 100;
 
-// Maximum number of URL chars to check in match clauses
-const maxUrlChars = 100;
-
 // Exact size for fingerprints, if you change also change fingerprintRegexs
 const fingerprintSize = 8;
 
@@ -263,6 +260,7 @@ export function parse(input, parserData) {
   parserData.filters = parserData.filters || [];
   parserData.noFingerprintFilters = parserData.noFingerprintFilters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
+  parserData.noFingerprintExceptionFilters = parserData.noFingerprintExceptionFilters || [];
   parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
   let startPos = 0;
   let endPos = input.length;
@@ -283,11 +281,17 @@ export function parse(input, parserData) {
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
       } else if (parsedFilterData.isException) {
-        parserData.exceptionFilters.push(parsedFilterData);
-      } else if (fingerprint.length > 0) {
-        parserData.filters.push(parsedFilterData);
+        if (fingerprint.length > 0) {
+          parserData.exceptionFilters.push(parsedFilterData);
+        } else {
+          parserData.noFingerprintExceptionFilters.push(parsedFilterData);
+        }
       } else {
-        parserData.noFingerprintFilters.push(parsedFilterData);
+        if (fingerprint.length > 0) {
+          parserData.filters.push(parsedFilterData);
+        } else {
+          parserData.noFingerprintFilters.push(parsedFilterData);
+        }
       }
     }
     startPos = endPos + 1;
@@ -544,12 +548,8 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
 
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
-  let cleanedInput = input.replace(/^https?:\/\//, '');
-  if (cleanedInput.length > maxUrlChars) {
-    cleanedInput = cleanedInput.substring(0, maxUrlChars);
-  }
   if (parserData.bloomFilter) {
-    if (!parserData.bloomFilter.substringExists(cleanedInput, fingerprintSize)) {
+    if (!parserData.bloomFilter.substringExists(input, fingerprintSize)) {
       cachedInputData.bloomNegativeCount++;
       cachedInputData.notMatchCount++;
       // console.log('early return because of bloom filter check!');
@@ -583,11 +583,14 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
       hasMatchingFilters(parserData.noFingerprintFilters, parserData, input, contextParams, cachedInputData)) {
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
-    let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
-    if (!exceptionBloomFilterMiss && hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
+    let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(input, fingerprintSize);
+    if (!exceptionBloomFilterMiss && hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData) ||
+        hasMatchingFilters(parserData.noFingerprintExceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
+      console.log('==FALSE');
       return false;
     }
+    console.log('==TRUE');
     return true;
   }
 
@@ -597,7 +600,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
   cachedInputData.misses.add(input);
   cachedInputData.notMatchCount++;
   cachedInputData.bloomFalsePositiveCount++;
-  discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, cleanedInput);
+  discoverMatchingPrefix(cachedInputData.badFingerprints, parserData.bloomFilter, input);
   // console.log('positive match for input: ', input);
   return false;
 }
