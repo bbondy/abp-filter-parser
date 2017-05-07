@@ -290,6 +290,11 @@ let exceptionRules = new Map([
        'http://examples.com/#!foo',
      ],
   }],
+  [`/adbanner.
+    @@||advertserve.com/images/aaamidatlantic.advertserve.com/advertpro/servlet/files/$image,domain=midatlantic.aaa.com`, {
+      blocked: ['http://simple-adblock.com/adblocktest/files/adbanner.gif'],
+      notBlocked: [],
+  }],
 ]);
 
 // Map from a key with a ABP filter rule to a set of [testUrl, context params, should block?]
@@ -439,7 +444,7 @@ describe('parser#parse()', function() {
       // Num lines minus (num empty lines + num comment lines)
       assert.equal(parserData.htmlRuleFilters.length, 26465);
       assert.equal(parserData.filters.length + parserData.noFingerprintFilters.length, 18096);
-      assert.equal(parserData.exceptionFilters.length, 2975);
+      assert.equal(parserData.exceptionFilters.length + parserData.noFingerprintExceptionFilters.length, 2975);
       cb();
     });
   });
@@ -457,6 +462,6 @@ describe('parser#parse()', function() {
     assert.equal(parserData.htmlRuleFilters.length, 3);
     assert.equal(parserData.filters.length, 0);
     assert.equal(parserData.noFingerprintFilters.length, 3);
-    assert.equal(parserData.exceptionFilters.length, 3);
+    assert.equal(parserData.exceptionFilters.length + parserData.noFingerprintExceptionFilters.length, 3);
   });
 });

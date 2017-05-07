@@ -263,6 +263,7 @@ export function parse(input, parserData) {
   parserData.filters = parserData.filters || [];
   parserData.noFingerprintFilters = parserData.noFingerprintFilters || [];
   parserData.exceptionFilters = parserData.exceptionFilters || [];
+  parserData.noFingerprintExceptionFilters = parserData.noFingerprintExceptionFilters || [];
   parserData.htmlRuleFilters = parserData.htmlRuleFilters || [];
   let startPos = 0;
   let endPos = input.length;
@@ -283,11 +284,17 @@ export function parse(input, parserData) {
       if (parsedFilterData.htmlRuleSelector) {
         parserData.htmlRuleFilters.push(parsedFilterData);
       } else if (parsedFilterData.isException) {
-        parserData.exceptionFilters.push(parsedFilterData);
-      } else if (fingerprint.length > 0) {
-        parserData.filters.push(parsedFilterData);
+        if (fingerprint.length > 0) {
+          parserData.exceptionFilters.push(parsedFilterData);
+        } else {
+          parserData.noFingerprintExceptionFilters.push(parsedFilterData);
+        }
       } else {
-        parserData.noFingerprintFilters.push(parsedFilterData);
+        if (fingerprint.length > 0) {
+          parserData.filters.push(parsedFilterData);
+        } else {
+          parserData.noFingerprintFilters.push(parsedFilterData);
+        }
       }
     }
     startPos = endPos + 1;
@@ -444,6 +451,13 @@ export function matchesFilter(parsedFilterData, input, contextParams = {}, cache
     return false;
   }
 
+  // For HTML rule selector filters, consider them as matches as long as the
+  // filter options match. This allows us to use this function, for example,
+  // to check whether an HTML rule selector filter applies to a domain or not
+  if (parsedFilterData.htmlRuleSelector) {
+    return true;
+  }
+
   // Check for a regex match
   if (parsedFilterData.isRegex) {
     if (!parsedFilterData.regex) {
@@ -537,7 +551,7 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
 
   cachedInputData.bloomFalsePositiveCount = cachedInputData.bloomFalsePositiveCount || 0;
   let hasMatchingNoFingerprintFilters;
-  let cleanedInput = input.replace(/^https?:\/\//, '');
+  let cleanedInput = input;
   if (cleanedInput.length > maxUrlChars) {
     cleanedInput = cleanedInput.substring(0, maxUrlChars);
   }
@@ -577,7 +591,8 @@ export function matches(parserData, input, contextParams = {}, cachedInputData =
     // Check for exceptions only when there's a match because matches are
     // rare compared to the volume of checks
     let exceptionBloomFilterMiss = parserData.exceptionBloomFilter && !parserData.exceptionBloomFilter.substringExists(cleanedInput, fingerprintSize);
-    if (!exceptionBloomFilterMiss || hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData)) {
+    if (!exceptionBloomFilterMiss && hasMatchingFilters(parserData.exceptionFilters, parserData, input, contextParams, cachedInputData) ||
+        hasMatchingFilters(parserData.noFingerprintExceptionFilters, parserData, input, contextParams, cachedInputData)) {
       cachedInputData.notMatchCount++;
       return false;
     }
