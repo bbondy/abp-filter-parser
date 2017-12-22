@@ -1,7 +1,7 @@
 {
   "name": "abp-filter-parser",
   "version": "0.2.0",
-  "main": "dist/src/abp-filter-parser.js",
+  "main": "src/abp-filter-parser.js",
   "scripts": {
     "test": "mocha --compilers js:babel-core/register",
     "lint": "eslint src/abp-filter-parser.js src/extractInfo.js test/*.js",
